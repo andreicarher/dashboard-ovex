@@ -91,15 +91,19 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 .table-scroll{ overflow-x:auto; }
 .table-scroll table{ min-width:920px; }
 .row-label{ color:var(--color-text-muted); font-weight:600; white-space:nowrap; }
-.row-sub td.row-label{ padding-left:1.8rem; font-weight:500; }
-.metric-platform td.row-label{ color:#c9a3f0; }
-.metric-crm td.row-label{ color:#8ec7f0; }
-.google-launch-col{ background:rgba(66,133,244,.10); }
-.launch-badge{ display:inline-block; margin-top:.3rem; font-size:.6rem; font-weight:700; color:#8ec7f0; background:rgba(66,133,244,.18); padding:.15rem .45rem; border-radius:6px; white-space:nowrap; text-transform:none; letter-spacing:0; }
+.group-header-inv{ background:rgba(157,103,221,.14); color:#9d67dd; text-align:center; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding:.5rem .6rem; }
+.group-header-leads{ background:rgba(93,202,165,.14); color:#5dcaa5; text-align:center; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding:.5rem .6rem; }
+.group-header-crm{ background:rgba(91,155,255,.14); color:#5b9bff; text-align:center; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; padding:.5rem .6rem; }
+.metric-inv{ color:#c9a8ec; }
+.metric-leads{ color:#8fddc3; }
+.metric-crm{ color:#8ec7f0; }
+.google-launch-row td{ background:rgba(66,133,244,.08); }
+.launch-badge{ display:inline-block; font-size:.6rem; font-weight:700; color:#8ec7f0; background:rgba(66,133,244,.18); padding:.15rem .45rem; border-radius:6px; white-space:nowrap; text-transform:none; letter-spacing:0; margin-left:.4rem; }
 .legend-row{ margin-top:.9rem; display:flex; gap:1.5rem; flex-wrap:wrap; font-size:.76rem; color:var(--color-text-muted); }
 .legend-dot{ display:inline-block; width:.6rem; height:.6rem; border-radius:50%; margin-right:.35rem; vertical-align:middle; }
-.legend-dot.platform{ background:#c9a3f0; }
-.legend-dot.crm{ background:#8ec7f0; }
+.legend-dot.inv{ background:#9d67dd; }
+.legend-dot.leads{ background:#5dcaa5; }
+.legend-dot.crm{ background:#5b9bff; }
 .table-toggle-btn{ background:var(--color-secondary); color:var(--color-text); border:1px solid rgba(255,255,255,.15); padding:.4rem 1rem; border-radius:8px; cursor:pointer; font-size:.78rem; font-weight:600; margin-bottom:.8rem; }
 .table-toggle-btn:hover{ background:#5c2f96; }
 @media (max-width:900px){
@@ -741,56 +745,63 @@ function toggleInvestmentDetail(tableKey){
   else buildLast8Table();
 }
 
-function getMetricRowDefs(expanded){
-  const rows = [
-    {label:'Inversión total', fmt:fmtMoney2, key:'cost_total', type:'platform'},
-    {label:'Inversión Meta', fmt:fmtMoney2, key:'cost_meta', type:'platform'},
-  ];
-  if(expanded){
-    rows.push({label:'↳ WEBFORMS', fmt:fmtMoney2, key:'cost_webforms', type:'platform', sub:true});
-    rows.push({label:'↳ MENSAJES', fmt:fmtMoney2, key:'cost_mensajes', type:'platform', sub:true});
-  }
-  rows.push({label:'Inversión Google', fmt:fmtMoney2, key:'cost_google', type:'platform'});
-  rows.push({label:'Leads Meta WEBFORMS', fmt:fmtNum, key:'leads_webforms', type:'platform'});
-  rows.push({label:'Leads Meta MENSAJES', fmt:fmtNum, key:'leads_mensajes', type:'platform'});
-  rows.push({label:'Leads Google (conversiones)', fmt:fmtNum, key:'leads_google', type:'platform'});
-  rows.push({label:'Costo / lead WEBFORMS', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_webforms', type:'platform'});
-  rows.push({label:'Costo / lead MENSAJES', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_mensajes', type:'platform'});
-  rows.push({label:'Costo / lead Google', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_google', type:'platform'});
-  return rows;
-}
-function getCrmRowDefs(){
-  return [
-    {label:'Registros CRM — Meta', fmt:fmtNum, key:'crm_meta', type:'crm'},
-    {label:'Registros CRM — Google', fmt:fmtNum, key:'crm_google', type:'crm'},
-  ];
-}
-function findGoogleLaunchIndex(rows){
+function findGoogleLaunchRow(rows){
   for(let i=0;i<rows.length;i++){
     if((rows[i].cost_google||0) > 0 || (rows[i].leads_google||0) > 0) return i;
   }
   return -1;
 }
-function renderMetricTable(containerId, rows, periodLabels, expanded, toggleKey){
+
+function renderPeriodTable(containerId, rows, periodLabels, expanded, toggleKey){
   rows.forEach(r=>{ r.cost_meta = (r.cost_webforms||0) + (r.cost_mensajes||0); });
-  const rowDefs = [...getMetricRowDefs(expanded), ...getCrmRowDefs()];
-  const glIndex = findGoogleLaunchIndex(rows);
+  const glRow = findGoogleLaunchRow(rows);
+
+  const invCols = expanded
+    ? [['Total','cost_total',fmtMoney2],['Meta','cost_meta',fmtMoney2],['↳ Webforms','cost_webforms',fmtMoney2],['↳ Mensajes','cost_mensajes',fmtMoney2],['Google','cost_google',fmtMoney2]]
+    : [['Total','cost_total',fmtMoney2],['Meta','cost_meta',fmtMoney2],['Google','cost_google',fmtMoney2]];
+  const leadsCols = [['Webforms','leads_webforms',fmtNum],['Mensajes','leads_mensajes',fmtNum],['Google','leads_google',fmtNum]];
+  const cplCols = [['Webforms','cpl_webforms',v=>v===null?'—':fmtMoney2(v)],['Mensajes','cpl_mensajes',v=>v===null?'—':fmtMoney2(v)],['Google','cpl_google',v=>v===null?'—':fmtMoney2(v)]];
+  const crmCols = [['Meta','crm_meta',fmtNum],['Google','crm_google',fmtNum]];
+
   const toggleBtn = `<button class="table-toggle-btn" onclick="toggleInvestmentDetail('${toggleKey}')">${expanded ? '▲ Ver resumen (Meta / Google)' : '▼ Ver desglose por objetivo (WEBFORMS / MENSAJES)'}</button>`;
-  const headerCells = periodLabels.map((p,i)=> `<th style="text-align:right;" class="${i===glIndex?'google-launch-col':''}">${p}${i===glIndex?'<br><span class="launch-badge">🆕 Google Ads</span>':''}</th>`).join('');
-  const bodyRows = rowDefs.map(mr=>`
-    <tr class="metric-${mr.type}${mr.sub?' row-sub':''}">
-      <td class="row-label">${mr.label}</td>
-      ${rows.map((r,i)=>`<td style="text-align:right;" class="${i===glIndex?'google-launch-col':''}">${mr.fmt(r[mr.key])}</td>`).join('')}
-    </tr>`).join('');
+
+  const groupHeaderRow = `
+    <tr>
+      <th></th>
+      <th colspan="${invCols.length}" class="group-header-inv">Inversión</th>
+      <th colspan="${leadsCols.length}" class="group-header-leads">Leads</th>
+      <th colspan="${cplCols.length}" class="group-header-leads">Costo / lead</th>
+      <th colspan="${crmCols.length}" class="group-header-crm">CRM</th>
+    </tr>`;
+  const subHeaderRow = `
+    <tr>
+      <th>Período</th>
+      ${invCols.map(c=>`<th style="text-align:right;">${c[0]}</th>`).join('')}
+      ${leadsCols.map(c=>`<th style="text-align:right;">${c[0]}</th>`).join('')}
+      ${cplCols.map(c=>`<th style="text-align:right;">${c[0]}</th>`).join('')}
+      ${crmCols.map(c=>`<th style="text-align:right;">${c[0]}</th>`).join('')}
+    </tr>`;
+
+  const bodyRows = rows.map((r,i)=>{
+    const isLaunch = i===glRow;
+    const periodCell = `<td class="row-label">${periodLabels[i]}${isLaunch?' <span class="launch-badge">🆕 Google Ads</span>':''}</td>`;
+    const invCells = invCols.map(c=>`<td class="metric-inv" style="text-align:right;">${c[2](r[c[1]])}</td>`).join('');
+    const leadsCells = leadsCols.map(c=>`<td class="metric-leads" style="text-align:right;">${c[2](r[c[1]])}</td>`).join('');
+    const cplCells = cplCols.map(c=>`<td class="metric-leads" style="text-align:right;">${c[2](r[c[1]])}</td>`).join('');
+    const crmCells = crmCols.map(c=>`<td class="metric-crm" style="text-align:right;">${c[2](r[c[1]])}</td>`).join('');
+    return `<tr class="${isLaunch?'google-launch-row':''}">${periodCell}${invCells}${leadsCells}${cplCells}${crmCells}</tr>`;
+  }).join('');
+
   document.getElementById(containerId).innerHTML = `
     ${toggleBtn}
     <table>
-      <thead><tr><th>Métrica</th>${headerCells}</tr></thead>
+      <thead>${groupHeaderRow}${subHeaderRow}</thead>
       <tbody>${bodyRows}</tbody>
     </table>
     <div class="legend-row">
-      <span><span class="legend-dot platform"></span> Métricas de plataforma (inversión y leads reportados por Meta/Google Ads)</span>
-      <span><span class="legend-dot crm"></span> Métricas del CRM (registros atribuidos, corte 1 jul 2026)</span>
+      <span><span class="legend-dot inv"></span> Inversión</span>
+      <span><span class="legend-dot leads"></span> Leads y costo por lead</span>
+      <span><span class="legend-dot crm"></span> CRM (registros atribuidos, corte 1 jul 2026)</span>
     </div>`;
 }
 
@@ -831,14 +842,14 @@ function computeMonthlyRows(){
 function buildMonthlySummaryTable(){
   const rows = computeMonthlyRows();
   const labels = rows.map(r=>labelMonth(r.month));
-  renderMetricTable('monthlySummaryTableWrap', rows, labels, investmentExpanded.monthly, 'monthly');
+  renderPeriodTable('monthlySummaryTableWrap', rows, labels, investmentExpanded.monthly, 'monthly');
 }
 
 // -------------------- Ultimas 8 semanas --------------------
 function buildLast8Table(){
   const rows = ACTIVE.last8_rows;
   const labels = rows.map(r=>labelWeek(r.week));
-  renderMetricTable('last8TableWrap', rows, labels, investmentExpanded.last8, 'last8');
+  renderPeriodTable('last8TableWrap', rows, labels, investmentExpanded.last8, 'last8');
 }
 
 function buildLast8CrmChart(){
