@@ -91,6 +91,17 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 .table-scroll{ overflow-x:auto; }
 .table-scroll table{ min-width:920px; }
 .row-label{ color:var(--color-text-muted); font-weight:600; white-space:nowrap; }
+.row-sub td.row-label{ padding-left:1.8rem; font-weight:500; }
+.metric-platform td.row-label{ color:#c9a3f0; }
+.metric-crm td.row-label{ color:#8ec7f0; }
+.google-launch-col{ background:rgba(66,133,244,.10); }
+.launch-badge{ display:inline-block; margin-top:.3rem; font-size:.6rem; font-weight:700; color:#8ec7f0; background:rgba(66,133,244,.18); padding:.15rem .45rem; border-radius:6px; white-space:nowrap; text-transform:none; letter-spacing:0; }
+.legend-row{ margin-top:.9rem; display:flex; gap:1.5rem; flex-wrap:wrap; font-size:.76rem; color:var(--color-text-muted); }
+.legend-dot{ display:inline-block; width:.6rem; height:.6rem; border-radius:50%; margin-right:.35rem; vertical-align:middle; }
+.legend-dot.platform{ background:#c9a3f0; }
+.legend-dot.crm{ background:#8ec7f0; }
+.table-toggle-btn{ background:var(--color-secondary); color:var(--color-text); border:1px solid rgba(255,255,255,.15); padding:.4rem 1rem; border-radius:8px; cursor:pointer; font-size:.78rem; font-weight:600; margin-bottom:.8rem; }
+.table-toggle-btn:hover{ background:#5c2f96; }
 @media (max-width:900px){
   .chart-grid, .two-col{ grid-template-columns:1fr; }
   h1{ font-size:1.4rem; }
@@ -132,6 +143,12 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="card">
       <div class="chart-desc">Vista mensual, todo el período disponible</div>
       <div class="chart-container"><canvas id="chartCanalTotal"></canvas></div>
+    </div>
+
+    <div class="section-title"><span class="dot"></span> Resumen mensual detallado</div>
+    <div class="card">
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">Todo el período (feb–jul 2026), mes a mes. Los registros CRM reflejan el corte del 1 de julio.</p>
+      <div class="table-scroll" id="monthlySummaryTableWrap"></div>
     </div>
   </div>
 
@@ -716,37 +733,112 @@ function buildGoogleSection(){
     </table>`;
 }
 
+// -------------------- Resumen: tabla mensual detallada --------------------
+let investmentExpanded = { monthly:false, last8:false };
+function toggleInvestmentDetail(tableKey){
+  investmentExpanded[tableKey] = !investmentExpanded[tableKey];
+  if(tableKey==='monthly') buildMonthlySummaryTable();
+  else buildLast8Table();
+}
+
+function getMetricRowDefs(expanded){
+  const rows = [
+    {label:'Inversión total', fmt:fmtMoney2, key:'cost_total', type:'platform'},
+    {label:'Inversión Meta', fmt:fmtMoney2, key:'cost_meta', type:'platform'},
+  ];
+  if(expanded){
+    rows.push({label:'↳ WEBFORMS', fmt:fmtMoney2, key:'cost_webforms', type:'platform', sub:true});
+    rows.push({label:'↳ MENSAJES', fmt:fmtMoney2, key:'cost_mensajes', type:'platform', sub:true});
+  }
+  rows.push({label:'Inversión Google', fmt:fmtMoney2, key:'cost_google', type:'platform'});
+  rows.push({label:'Leads Meta WEBFORMS', fmt:fmtNum, key:'leads_webforms', type:'platform'});
+  rows.push({label:'Leads Meta MENSAJES', fmt:fmtNum, key:'leads_mensajes', type:'platform'});
+  rows.push({label:'Leads Google (conversiones)', fmt:fmtNum, key:'leads_google', type:'platform'});
+  rows.push({label:'Costo / lead WEBFORMS', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_webforms', type:'platform'});
+  rows.push({label:'Costo / lead MENSAJES', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_mensajes', type:'platform'});
+  rows.push({label:'Costo / lead Google', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_google', type:'platform'});
+  return rows;
+}
+function getCrmRowDefs(){
+  return [
+    {label:'Registros CRM — Meta', fmt:fmtNum, key:'crm_meta', type:'crm'},
+    {label:'Registros CRM — Google', fmt:fmtNum, key:'crm_google', type:'crm'},
+  ];
+}
+function findGoogleLaunchIndex(rows){
+  for(let i=0;i<rows.length;i++){
+    if((rows[i].cost_google||0) > 0 || (rows[i].leads_google||0) > 0) return i;
+  }
+  return -1;
+}
+function renderMetricTable(containerId, rows, periodLabels, expanded, toggleKey){
+  rows.forEach(r=>{ r.cost_meta = (r.cost_webforms||0) + (r.cost_mensajes||0); });
+  const rowDefs = [...getMetricRowDefs(expanded), ...getCrmRowDefs()];
+  const glIndex = findGoogleLaunchIndex(rows);
+  const toggleBtn = `<button class="table-toggle-btn" onclick="toggleInvestmentDetail('${toggleKey}')">${expanded ? '▲ Ver resumen (Meta / Google)' : '▼ Ver desglose por objetivo (WEBFORMS / MENSAJES)'}</button>`;
+  const headerCells = periodLabels.map((p,i)=> `<th style="text-align:right;" class="${i===glIndex?'google-launch-col':''}">${p}${i===glIndex?'<br><span class="launch-badge">🆕 Google Ads</span>':''}</th>`).join('');
+  const bodyRows = rowDefs.map(mr=>`
+    <tr class="metric-${mr.type}${mr.sub?' row-sub':''}">
+      <td class="row-label">${mr.label}</td>
+      ${rows.map((r,i)=>`<td style="text-align:right;" class="${i===glIndex?'google-launch-col':''}">${mr.fmt(r[mr.key])}</td>`).join('')}
+    </tr>`).join('');
+  document.getElementById(containerId).innerHTML = `
+    ${toggleBtn}
+    <table>
+      <thead><tr><th>Métrica</th>${headerCells}</tr></thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    <div class="legend-row">
+      <span><span class="legend-dot platform"></span> Métricas de plataforma (inversión y leads reportados por Meta/Google Ads)</span>
+      <span><span class="legend-dot crm"></span> Métricas del CRM (registros atribuidos, corte 1 jul 2026)</span>
+    </div>`;
+}
+
+function computeMonthlyRows(){
+  const months = (ACTIVE.months_available && ACTIVE.months_available.length)
+    ? ACTIVE.months_available
+    : [...new Set(ACTIVE.meta_monthly.map(r=>r.month))].sort();
+
+  const monthObjMap = {};
+  (ACTIVE.meta_monthly_breakdown||[]).forEach(r=>{
+    const key = r.month+'|'+r.Objetivo;
+    if(!monthObjMap[key]) monthObjMap[key] = {cost:0, web_reg:0, msg_conv:0};
+    monthObjMap[key].cost += r.cost;
+    monthObjMap[key].web_reg += (r.web_reg||0);
+    monthObjMap[key].msg_conv += (r.msg_conv||0);
+  });
+  const googleMonthlyMap = Object.fromEntries((ACTIVE.google_monthly||[]).map(r=>[r.month,r]));
+  const crmMonthlyMap = Object.fromEntries((ACTIVE.comparison_monthly||[]).map(r=>[r.month,r]));
+
+  return months.map(m=>{
+    const wf = monthObjMap[m+'|WEBFORMS'] || {cost:0, web_reg:0};
+    const mj = monthObjMap[m+'|MENSAJES'] || {cost:0, msg_conv:0};
+    const g = googleMonthlyMap[m] || {cost:0, conversions:0};
+    const crm = crmMonthlyMap[m] || {meta_crm:0, google_crm:0};
+    return {
+      month: m,
+      cost_total: wf.cost + mj.cost + g.cost,
+      cost_webforms: wf.cost, cost_mensajes: mj.cost, cost_google: g.cost,
+      leads_webforms: wf.web_reg || 0, leads_mensajes: mj.msg_conv || 0, leads_google: g.conversions || 0,
+      cpl_webforms: wf.web_reg ? wf.cost/wf.web_reg : null,
+      cpl_mensajes: mj.msg_conv ? mj.cost/mj.msg_conv : null,
+      cpl_google: g.conversions ? g.cost/g.conversions : null,
+      crm_meta: crm.meta_crm || 0, crm_google: crm.google_crm || 0,
+    };
+  });
+}
+
+function buildMonthlySummaryTable(){
+  const rows = computeMonthlyRows();
+  const labels = rows.map(r=>labelMonth(r.month));
+  renderMetricTable('monthlySummaryTableWrap', rows, labels, investmentExpanded.monthly, 'monthly');
+}
+
 // -------------------- Ultimas 8 semanas --------------------
 function buildLast8Table(){
   const rows = ACTIVE.last8_rows;
-  const weekLabels = rows.map(r=>labelWeek(r.week));
-
-  const metricRows = [
-    {label:'Inversión total', fmt:fmtMoney2, key:'cost_total'},
-    {label:'— Inversión WEBFORMS', fmt:fmtMoney2, key:'cost_webforms'},
-    {label:'— Inversión MENSAJES', fmt:fmtMoney2, key:'cost_mensajes'},
-    {label:'— Inversión Google', fmt:fmtMoney2, key:'cost_google'},
-    {label:'Leads Meta WEBFORMS', fmt:fmtNum, key:'leads_webforms'},
-    {label:'Leads Meta MENSAJES', fmt:fmtNum, key:'leads_mensajes'},
-    {label:'Leads Google (conversiones)', fmt:fmtNum, key:'leads_google'},
-    {label:'Costo / lead WEBFORMS', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_webforms'},
-    {label:'Costo / lead MENSAJES', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_mensajes'},
-    {label:'Costo / lead Google', fmt:v=>v===null?'—':fmtMoney2(v), key:'cpl_google'},
-  ];
-
-  document.getElementById('last8TableWrap').innerHTML = `
-    <table>
-      <thead>
-        <tr><th>Métrica</th>${weekLabels.map(w=>`<th style="text-align:right;">${w}</th>`).join('')}</tr>
-      </thead>
-      <tbody>
-        ${metricRows.map(mr=>`
-          <tr>
-            <td class="row-label">${mr.label}</td>
-            ${rows.map(r=>`<td style="text-align:right;">${mr.fmt(r[mr.key])}</td>`).join('')}
-          </tr>`).join('')}
-      </tbody>
-    </table>`;
+  const labels = rows.map(r=>labelWeek(r.week));
+  renderMetricTable('last8TableWrap', rows, labels, investmentExpanded.last8, 'last8');
 }
 
 function buildLast8CrmChart(){
@@ -914,6 +1006,7 @@ function buildContenidoRankingTable(){
 function renderAll(){
   buildKPIs();
   buildCanalTotalChart();
+  buildMonthlySummaryTable();
   buildMonthChips();
   buildMetaBreakdownCost();
   buildMetaBreakdownResults();
