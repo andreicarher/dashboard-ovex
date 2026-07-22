@@ -133,6 +133,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <button class="tab-btn" data-tab="ocho" onclick="switchTab('ocho')">📅 Últimas 8 semanas</button>
     <button class="tab-btn" data-tab="crm" onclick="switchTab('crm')">✅ CRM vs Plataforma</button>
     <button class="tab-btn" data-tab="calidad" onclick="switchTab('calidad')">🔬 Calidad de Lead</button>
+    <button class="tab-btn" data-tab="pipeline" onclick="switchTab('pipeline')">🧭 Pipeline Actual</button>
     <button class="tab-btn" data-tab="insights" onclick="switchTab('insights')">💡 Insights y Optimizaciones</button>
   </div>
 </div>
@@ -153,7 +154,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 
     <div class="section-title"><span class="dot"></span> Resumen mensual detallado</div>
     <div class="card">
-      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">Todo el período (feb–jul 2026), mes a mes. Los registros CRM reflejan el corte del 1 de julio.</p>
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">Todo el período (feb–jul 2026), mes a mes. Los registros CRM reflejan el corte del 22 de julio.</p>
       <div class="table-scroll" id="monthlySummaryTableWrap"></div>
     </div>
   </div>
@@ -198,7 +199,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
   <div id="tab-ocho" class="tab-content">
     <div class="section-title"><span class="dot"></span> Últimas 8 semanas</div>
     <p class="text-muted" style="font-size:.85rem; margin-bottom:1rem;">
-      Corte fijo al momento de generar este dashboard (semanas del 1 de junio al 20 de julio de 2026). Costo por lead calculado por objetivo: WEBFORMS, MENSAJES y Google (sin desglose interno).
+      Las 8 semanas más recientes con datos de gasto — se recalculan solas cada vez que hay conexión en vivo con el Google Sheet. Costo por lead calculado por objetivo: WEBFORMS, MENSAJES y Google (sin desglose interno).
     </p>
     <div class="card">
       <div class="table-scroll" id="last8TableWrap"></div>
@@ -208,7 +209,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="card">
       <div class="alert warning" style="margin-bottom:1rem;">
         <div class="alert-title">⚠️ Corte de datos del CRM</div>
-        <p>El archivo de CRM solo llega hasta el 1 de julio de 2026 — por eso las semanas de julio (S28 en adelante) muestran 0 registros de CRM aunque sí hubo inversión y leads reportados por las plataformas esas semanas.</p>
+        <p>El archivo de CRM tiene datos hasta el 22 de julio de 2026 — puede haber un pequeño rezago entre el corte del CRM y el gasto más reciente de Meta/Google, así que la última semana mostrada podría verse incompleta del lado de CRM.</p>
       </div>
       <div class="chart-container"><canvas id="chartLast8Crm"></canvas></div>
     </div>
@@ -220,7 +221,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="card">
       <div class="alert info" style="margin-bottom:1.2rem;">
         <div class="alert-title">ℹ️ Cómo se calcula</div>
-        <p>"Reportado por plataforma" = <strong>Website registrations completed</strong> (Meta) y <strong>Conversions</strong> (Google), directo de cada plataforma. "CRM" = registros en <code>Registrados_por_UTM.xlsx</code> atribuidos por <code>utm_source</code>: <strong>fb / ig → Meta</strong>, <strong>contiene "Google" → Google</strong>. % variación = (CRM − Plataforma) / Plataforma. El archivo de CRM solo tiene datos completos hasta el <strong>1 de julio</strong>, y no hay ningún registro con fuente "Google" todavía (la campaña de Google arrancó el 10 de julio, después del corte del CRM).</p>
+        <p>"Reportado por plataforma" = <strong>Website registrations completed</strong> (Meta) y <strong>Conversions</strong> (Google), directo de cada plataforma. "CRM" = registros atribuidos por <code>utm_source</code>: <strong>fb / ig → Meta</strong>, <strong>contiene "Google" → Google</strong> (cualquier valor de <code>utm_medium</code>, incluyendo vacío o "cpc"). % variación = (CRM − Plataforma) / Plataforma. El archivo de CRM tiene datos hasta el <strong>22 de julio</strong>.</p>
       </div>
       <div class="chip-group">
         <button class="chip-btn active" data-gran="month" onclick="setCrmGranularity('month')">Mensual</button>
@@ -233,13 +234,16 @@ tr:hover td{ background:rgba(255,255,255,.02); }
   <!-- ============ TAB: CALIDAD DE LEAD (avanzado, Registrados_por_UTM) ============ -->
   <div id="tab-calidad" class="tab-content">
     <p class="text-muted" style="font-size:.85rem; margin-bottom:1.5rem;">
-      Estos análisis usan <code>Registrados_por_UTM.xlsx</code> (leads pagados, fb/ig, desde feb 2026) — es la misma foto fija del CRM que el resto del dashboard (corte: 1 de julio de 2026).
+      Estos análisis usan <code>Reporte_con_UTM_-_Ovex.csv</code> (leads pagados, Meta + Google, desde feb 2026) — es la misma foto fija del CRM que el resto del dashboard (corte: 22 de julio de 2026).
     </p>
 
     <div class="section-title"><span class="dot crm"></span> Funnel de aprobación completo, por canal</div>
     <div class="card">
-      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">CIEC verificada → NIP verificado → Paramétrico aprobado → Buró aprobado → Con arrendamiento. % calculado solo sobre los registros donde ese campo tiene un valor (no está vacío).</p>
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:.6rem;">CIEC verificada → NIP verificado → Paramétrico aprobado → Buró aprobado. Cada barra muestra el % de leads de ese canal con "SI" en ese campo, calculado <strong>solo sobre los registros donde ese campo ya tiene un valor capturado</strong> (no está vacío) — por eso no es un embudo de una sola base que se reduce paso a paso, cada barra tiene su propio denominador.</p>
       <div class="chart-container"><canvas id="chartFunnelCanal"></canvas></div>
+      <div class="chart-legend-note" style="color:var(--color-text-muted); border-top-color:rgba(255,255,255,.1);">
+        ⚠️ <strong>Una barra ausente no siempre significa lo mismo:</strong> puede ser un 0% real (el campo tiene valor pero nadie pasó, ej. Google en CIEC) o significar que <strong>todavía no hay ningún caso evaluado</strong> en ese canal (ej. Google en Paramétrico, donde los 52 leads siguen sin valor). Además, los tamaños de muestra detrás de Paramétrico y Buró suelen ser muy chicos (a veces menos de 30 casos) — un solo caso puede mover el % varios puntos; interpreta estas dos etapas con más cautela que CIEC/NIP.
+      </div>
     </div>
 
     <div class="section-title"><span class="dot"></span> Costo por arrendamiento firmado</div>
@@ -253,22 +257,40 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="chart-grid" style="margin-top:1.5rem;">
       <div class="card">
         <div class="chart-title">Tiempo de conversión (primer clic → registro)</div>
-        <div class="chart-desc">Días entre <code>Primera visita</code> y <code>Fecha registro</code></div>
+        <div class="chart-desc">Días entre <code>Primera visita</code> (primer clic al anuncio) y <code>Fecha registro</code>, agrupados en rangos. La barra "Registro previo al clic" son casos donde la fecha de registro es anterior a la visita registrada — un patrón atípico de cómo se re-matchean visitas múltiples, no un tiempo de conversión real, y se excluye de los promedios.</div>
         <div class="chart-container"><canvas id="chartLagBuckets"></canvas></div>
         <div class="chart-legend-note" id="lagStatsNote"></div>
       </div>
       <div class="card">
         <div class="chart-title">Auditoría: Buró aprobado = SI pero Rechazado</div>
-        <div class="chart-desc">Por campaña — casos donde el lead pasó el buró de crédito pero de todas formas se rechazó</div>
+        <div class="chart-desc">Por campaña — casos donde el lead pasó el buró de crédito (una señal positiva de solvencia) pero de todas formas terminó rechazado. La columna % es sobre el total de rechazados de esa campaña, no sobre el total de leads.</div>
         <div id="buroAuditTableWrap"></div>
       </div>
     </div>
 
     <div class="section-title"><span class="dot"></span> Ranking de Contenido (creativo) por avance de funnel</div>
     <div class="card">
-      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">Mínimo 10 registros por creativo. Ordenado por % que llega a Onboarded (no solo volumen).</p>
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">Mínimo 10 registros por creativo. Ordenado por % que llega a Onboarded (no solo volumen) — es decir, qué tan bien ese anuncio trae leads que efectivamente avanzan, no solo cuántos registra. % CIEC SI y % Buró SI son sobre los leads de ese creativo con valor capturado en ese campo (ver nota de la gráfica de funnel arriba sobre tamaños de muestra chicos).</p>
       <div id="contenidoRankingWrap"></div>
     </div>
+  </div>
+
+  <!-- ============ TAB: PIPELINE ACTUAL ============ -->
+  <div id="tab-pipeline" class="tab-content">
+    <p class="text-muted" style="font-size:.85rem; margin-bottom:1.5rem;">
+      De los leads pagados (Meta + Google) registrados en cada mes, ¿en qué etapa están <strong>hoy</strong> (corte del CRM)? Cada mes es un grupo (cohorte) distinto — no es que se acumulen, es una foto de dónde quedó cada cohorte al día de hoy.
+    </p>
+
+    <div class="section-title"><span class="dot crm"></span> Distribución de estatus por mes de registro</div>
+    <div class="card">
+      <div class="chart-container tall"><canvas id="chartPipeline"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;">
+      <div id="pipelineTableWrap"></div>
+    </div>
+
+    <div id="pipelineStuckAlert"></div>
   </div>
 
   <!-- ============ TAB: INSIGHTS Y OPTIMIZACIONES ============ -->
@@ -296,7 +318,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 
 <div class="footer-note">
   Fuente: Meta Ads (Query Meta 2026) y Google Ads (Query Google 2026) vía "Dash | KPI's OVEX" · CRM: Registrados_por_UTM.xlsx<br>
-  Vista desde febrero 2026 · Meta/Google actualizado al 21 de julio de 2026 · CRM actualizado al 1 de julio de 2026
+  Vista desde febrero 2026 · Meta/Google actualizado al 21 de julio de 2026 · CRM actualizado al 22 de julio de 2026
 </div>
 
 <script id="dashboard-data" type="application/json">
@@ -304,7 +326,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 </script>
 
 <script id="advanced-data" type="application/json">
-{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}]}
+{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}]}
 </script>
 
 <script>
@@ -1035,6 +1057,72 @@ function buildContenidoRankingTable(){
 }
 
 // -------------------- INIT --------------------
+// -------------------- Pipeline Actual --------------------
+function buildPipelineChart(){
+  const rows = ADV.pipeline_by_month || [];
+  renderChart('chartPipeline', {
+    type:'bar',
+    data:{
+      labels: rows.map(r=>labelMonth(r.month)),
+      datasets:[
+        {label:'Onboarding', data: rows.map(r=>r.onboarding_pct), backgroundColor:'#f39c12', stack:'s', borderRadius:3},
+        {label:'Onboarded', data: rows.map(r=>r.onboarded_pct), backgroundColor:'#5dcaa5', stack:'s', borderRadius:3},
+        {label:'Rechazado', data: rows.map(r=>r.rechazado_pct), backgroundColor:'#9d67dd', stack:'s', borderRadius:3},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top', labels:{color:'#f2eefa'}},
+        tooltip:{ callbacks:{ label:(ctx)=>{
+          const r = rows[ctx.dataIndex];
+          const nKey = ctx.dataset.label==='Onboarding'?'onboarding_n':(ctx.dataset.label==='Onboarded'?'onboarded_n':'rechazado_n');
+          return `${ctx.dataset.label}: ${ctx.parsed.y}% (${fmtNum(r[nKey])} leads)`;
+        }}}
+      },
+      scales:{ x:{grid:{color:gridColor}, stacked:true}, y:{grid:{color:gridColor}, stacked:true, max:100, ticks:{callback:v=>v+'%'}} }
+    }
+  });
+}
+
+function buildPipelineTable(){
+  const rows = ADV.pipeline_by_month || [];
+  document.getElementById('pipelineTableWrap').innerHTML = `
+    <table>
+      <thead>
+        <tr><th>Mes</th><th style="text-align:right;">Total leads</th><th style="text-align:right;">Onboarding</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">Rechazado</th></tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td class="row-label">${labelMonth(r.month)}</td>
+            <td style="text-align:right;">${fmtNum(r.total)}</td>
+            <td style="text-align:right;">${fmtNum(r.onboarding_n)} (${r.onboarding_pct}%)</td>
+            <td style="text-align:right; color:#5dcaa5;">${fmtNum(r.onboarded_n)} (${r.onboarded_pct}%)</td>
+            <td style="text-align:right; color:#c9a8ec;">${fmtNum(r.rechazado_n)} (${r.rechazado_pct}%)</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function buildPipelineStuckAlert(){
+  const rows = ADV.pipeline_by_month || [];
+  if(rows.length < 2){ document.getElementById('pipelineStuckAlert').innerHTML=''; return; }
+  // cohortes más viejas (excepto la más reciente, que apenas empieza) con % Onboarding alto
+  const older = rows.slice(0, -1);
+  const worst = older.reduce((a,r)=> (r.onboarding_pct > (a?a.onboarding_pct:-1)) ? r : a, null);
+  if(worst && worst.onboarding_pct > 50){
+    document.getElementById('pipelineStuckAlert').innerHTML = `
+      <div class="alert warning" style="margin-top:1.5rem;">
+        <div class="alert-title">⚠️ Leads estancados en Onboarding</div>
+        <p>La cohorte de <strong>${labelMonth(worst.month)}</strong> tiene <strong>${worst.onboarding_pct}%</strong> (${fmtNum(worst.onboarding_n)} de ${fmtNum(worst.total)}) todavía en Onboarding, a pesar de llevar semanas o meses registrados. Esperaríamos que las cohortes más viejas tuvieran menor % en Onboarding que las recientes (más tiempo para resolverse) — si esto no está pasando, vale la pena revisar si hay leads abandonados en el proceso que ya no se van a mover, en vez de asumir que "están en proceso".</p>
+      </div>`;
+  } else {
+    document.getElementById('pipelineStuckAlert').innerHTML = '';
+  }
+}
+
+
 // -------------------- Insights automáticos (Capa 1: reglas) --------------------
 function pct(a,b){ return b ? ((a-b)/b*100) : null; }
 
@@ -1155,6 +1243,9 @@ function renderAll(){
   buildLagBucketsChart();
   buildBuroAuditTable();
   buildContenidoRankingTable();
+  buildPipelineChart();
+  buildPipelineTable();
+  buildPipelineStuckAlert();
   buildRuleInsights();
 }
 
