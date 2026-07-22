@@ -54,6 +54,7 @@ h1{ font-size:1.85rem; font-weight:800; margin-bottom:.3rem; background:linear-g
 .kpi-card.google::before{ background:var(--color-google); }
 .kpi-card.crm::before{ background:var(--color-info); }
 .kpi-card.success::before{ background:var(--color-success); }
+.kpi-card.warning::before{ background:var(--color-warning); }
 .kpi-label{ font-size:.78rem; color:var(--color-text-muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem; }
 .kpi-value{ font-size:1.7rem; font-weight:800; }
 .kpi-sub{ font-size:.78rem; color:var(--color-text-muted); margin-top:.3rem; }
@@ -132,6 +133,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <button class="tab-btn" data-tab="ocho" onclick="switchTab('ocho')">📅 Últimas 8 semanas</button>
     <button class="tab-btn" data-tab="crm" onclick="switchTab('crm')">✅ CRM vs Plataforma</button>
     <button class="tab-btn" data-tab="calidad" onclick="switchTab('calidad')">🔬 Calidad de Lead</button>
+    <button class="tab-btn" data-tab="insights" onclick="switchTab('insights')">💡 Insights y Optimizaciones</button>
   </div>
 </div>
 
@@ -180,7 +182,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="card">
       <div class="two-col">
         <div>
-          <div class="chart-title">Inversión y clics por semana</div>
+          <div class="chart-title">Inversión y conversiones por semana</div>
           <div class="chart-container"><canvas id="chartGoogleDaily"></canvas></div>
           <div class="chart-legend-note">⚠️ Solo 11 días de datos (10–21 jul 2026), una sola campaña de búsqueda (<code>RO_MX_SAL_PRO_SEARCH_OVEX</code>). No aplica desglose por objetivo/etapa de funnel: Google aún no reporta esas dimensiones y es la única campaña activa. Revisar de nuevo con más historial.</div>
         </div>
@@ -244,7 +246,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="card">
       <div class="alert warning">
         <div class="alert-title">⚠️ Todavía no hay arrendamientos firmados desde paid media</div>
-        <p>De <span id="arrLeadsTotal"></span> leads atribuidos a Meta + Google Ads por UTM, <strong>0 han firmado arrendamiento</strong> hasta el corte del CRM. Para contexto: el tráfico orgánico sí tiene <strong><span id="arrOrganicoTotal"></span> arrendamientos firmados</strong> en el mismo período (<span id="arrOrganicoAlltime"></span> en todo el histórico). Esta métrica queda lista para calcularse automáticamente en cuanto el primer lead pagado firme — por ahora es la alerta más importante de esta vista.</p>
+        <p>De <span id="arrLeadsTotal"></span> leads atribuidos a Meta + Google Ads por UTM, <strong>0 han firmado arrendamiento</strong> hasta el corte del CRM. Para contexto: los registros <strong>sin fuente asignada</strong> sí tienen <strong><span id="arrOrganicoTotal"></span> arrendamientos firmados</strong> en el mismo período (<span id="arrOrganicoAlltime"></span> en todo el histórico). Ojo: "sin fuente asignada" no es necesariamente tráfico orgánico puro — las campañas de WhatsApp (MENSAJES) tampoco registran Fuente/Medio, así que este grupo puede incluir leads de esos esfuerzos pagados junto con el orgánico real; hoy no hay forma de separarlos con los datos disponibles. Esta métrica de arrendamiento queda lista para calcularse automáticamente en cuanto el primer lead pagado con UTM firme — por ahora es la alerta más importante de esta vista.</p>
       </div>
     </div>
 
@@ -269,6 +271,27 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     </div>
   </div>
 
+  <!-- ============ TAB: INSIGHTS Y OPTIMIZACIONES ============ -->
+  <div id="tab-insights" class="tab-content">
+    <p class="text-muted" style="font-size:.85rem; margin-bottom:1.5rem;">
+      Dos capas: <strong>señales automáticas</strong> (se recalculan solas con los datos en vivo de Meta/Google y el corte de CRM más reciente) y <strong>notas del analista</strong> (interpretación escrita a mano, actualizada cada vez que se reprocesan archivos nuevos).
+    </p>
+
+    <div class="section-title"><span class="dot"></span> Señales automáticas <span class="badge" style="background:rgba(157,103,221,.15); color:#c9a3f0; margin-left:.5rem;">se recalculan solas</span></div>
+    <div id="ruleInsightsWrap" class="kpi-grid"></div>
+
+    <div class="section-title"><span class="dot crm"></span> Notas del analista <span class="badge" style="background:rgba(91,155,255,.15); color:#8ec7f0; margin-left:.5rem;">actualizado 22 jul 2026</span></div>
+    <div class="card">
+      <ul style="padding-left:1.2rem; font-size:.88rem; line-height:1.9;">
+        <li><strong>El pixel de Meta parece estar sub-reportando registros desde abril.</strong> El CRM encuentra 27% más registros que Meta en abril, 256% más en mayo y 160% más en junio — la brecha es demasiado grande y consistente para ser ruido de atribución normal. Vale la pena una auditoría técnica del pixel con quien lo administra antes de tomar decisiones de presupuesto basadas en el número que reporta Meta directamente.</li>
+        <li><strong>Google Ads convierte casi instantáneo (mediana 0 días, promedio 0.03 días) contra ~3 días de Meta.</strong> Consistente con tráfico de búsqueda de alta intención — la gente que busca "OVEX" o similar ya viene decidida. Con solo 52 leads todavía es una muestra chica, pero el patrón es claro y vale la pena revisar de nuevo con más volumen.</li>
+        <li><strong>Los registros sin fuente asignada aprueban mejor el Buró de crédito (15.0%) que Meta (8.9%).</strong> No podemos saber con certeza si es una diferencia real de calidad de audiencia o simplemente que ese grupo lleva más tiempo en el funnel (algunos son de antes de febrero). Con el dato de WhatsApp mezclado ahí adentro, tampoco podemos aislar cuánto de esto es orgánico puro.</li>
+        <li><strong>Cero arrendamientos firmados desde paid media, con 1,107 leads pagados atribuidos.</strong> Sigue siendo la alerta más importante de todo el dashboard — todo el embudo de arriba (registro, onboarding, buró) se ve razonable, pero en ningún punto se está traduciendo en el resultado de negocio real. Esto merece una revisión conjunta con el equipo comercial, no solo de marketing.</li>
+        <li><strong>El creativo "¿Qué es OVEX?" tiene 143 registros y 0% de Onboarded.</strong> Es el creativo con más volumen del ranking y el único en cero — buen candidato para pausar o rediseñar, ya que "PRO_VID_WAP_1080x1080_Vehículo Empresarial" y "PRO_VID_WEB_1080x1920_Catálogo Empresarios" logran 8.3% con mucho menos volumen.</li>
+      </ul>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer-note">
@@ -281,7 +304,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 </script>
 
 <script id="advanced-data" type="application/json">
-{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Orgánico", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}]}
+{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}]}
 </script>
 
 <script>
@@ -704,7 +727,7 @@ function buildGoogleSection(){
       labels: arr.map(r=>labelWeek(r.week)),
       datasets:[
         {label:'Inversión', data: arr.map(r=>r.cost), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4},
-        {label:'Clics', data: arr.map(r=>r.clicks), type:'line', borderColor:'#f39c12', backgroundColor:'#f39c12', yAxisID:'y1', tension:.3}
+        {label:'Conversiones', data: arr.map(r=>r.conversions), type:'line', borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3}
       ]
     },
     options:{
@@ -713,7 +736,7 @@ function buildGoogleSection(){
       scales:{
         x:{ grid:{color:gridColor} },
         y:{ position:'left', grid:{color:gridColor}, title:{display:true,text:'Inversión ($)',color:textMuted} },
-        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Clics',color:textMuted} }
+        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Conversiones',color:textMuted} }
       }
     }
   });
@@ -924,7 +947,7 @@ function buildFunnelCanalChart(){
     {key:'parametrico_si_pct', label:'Paramétrico aprobado'},
     {key:'buro_si_pct', label:'Buró aprobado'},
   ];
-  const colors = {'Meta':'#b98aef','Google':'#5b9bff','Orgánico':'#e8e2f0'};
+  const colors = {'Meta':'#b98aef','Google':'#5b9bff','Sin fuente asignada':'#e8e2f0'};
   const datasetsByCanal = rows.map(r=>({
     label: r.canal,
     data: stages.map(s=>r[s.key]),
@@ -944,7 +967,7 @@ function buildFunnelCanalChart(){
 }
 
 function buildArrendamientoNote(){
-  const total = ADV.funnel_by_canal.filter(r=>r.canal!=='Orgánico').reduce((a,r)=>a+r.total,0);
+  const total = ADV.funnel_by_canal.filter(r=>r.canal!=='Sin fuente asignada').reduce((a,r)=>a+r.total,0);
   const el = document.getElementById('arrLeadsTotal');
   if(el) el.textContent = fmtNum(total);
   const s = ADV.arrendamiento_summary;
@@ -1012,6 +1035,110 @@ function buildContenidoRankingTable(){
 }
 
 // -------------------- INIT --------------------
+// -------------------- Insights automáticos (Capa 1: reglas) --------------------
+function pct(a,b){ return b ? ((a-b)/b*100) : null; }
+
+function computeRuleInsights(){
+  const insights = [];
+  const monthly = computeMonthlyRows();
+  if(monthly.length < 2) return insights;
+  const prev = monthly[monthly.length-2];
+  const curr = monthly[monthly.length-1];
+  const currLabel = labelMonth(curr.month);
+  const prevLabel = labelMonth(prev.month);
+
+  // 1. CPL WEBFORMS trend
+  if(prev.cpl_webforms && curr.cpl_webforms){
+    const chg = pct(curr.cpl_webforms, prev.cpl_webforms);
+    insights.push({
+      sev: chg>15?'warning':(chg<-15?'success':'neutral'),
+      title:'Costo / lead WEBFORMS',
+      text:`${fmtMoney2(curr.cpl_webforms)} en ${currLabel} vs ${fmtMoney2(prev.cpl_webforms)} en ${prevLabel} (${chg>=0?'+':''}${chg.toFixed(0)}%).`
+    });
+  }
+  // 2. CPL MENSAJES trend
+  if(prev.cpl_mensajes && curr.cpl_mensajes){
+    const chg = pct(curr.cpl_mensajes, prev.cpl_mensajes);
+    insights.push({
+      sev: chg>15?'warning':(chg<-15?'success':'neutral'),
+      title:'Costo / lead MENSAJES',
+      text:`${fmtMoney2(curr.cpl_mensajes)} en ${currLabel} vs ${fmtMoney2(prev.cpl_mensajes)} en ${prevLabel} (${chg>=0?'+':''}${chg.toFixed(0)}%).`
+    });
+  }
+  // 3. CPL Google trend (si hay 2+ meses con dato)
+  if(prev.cpl_google && curr.cpl_google){
+    const chg = pct(curr.cpl_google, prev.cpl_google);
+    insights.push({
+      sev: chg>15?'warning':(chg<-15?'success':'neutral'),
+      title:'Costo / lead Google',
+      text:`${fmtMoney2(curr.cpl_google)} en ${currLabel} vs ${fmtMoney2(prev.cpl_google)} en ${prevLabel} (${chg>=0?'+':''}${chg.toFixed(0)}%).`
+    });
+  } else if(curr.cpl_google){
+    insights.push({ sev:'neutral', title:'Costo / lead Google', text:`${fmtMoney2(curr.cpl_google)} en ${currLabel} — todavía sin mes previo para comparar.` });
+  }
+
+  // 4/5. CRM variance del mes más reciente con dato de CRM
+  const crmRows = (ACTIVE.comparison_monthly||[]).filter(r=>r.meta_reported || r.meta_crm);
+  if(crmRows.length){
+    const lastCrm = crmRows[crmRows.length-1];
+    if(lastCrm.meta_var_pct !== null && lastCrm.meta_var_pct !== undefined){
+      const v = lastCrm.meta_var_pct;
+      insights.push({
+        sev: Math.abs(v)>50?'warning':'neutral',
+        title:`CRM vs Meta (${labelMonth(lastCrm.month)})`,
+        text:`El CRM encontró ${fmtNum(lastCrm.meta_crm)} registros vs ${fmtNum(lastCrm.meta_reported)} que reportó Meta (${v>=0?'+':''}${v.toFixed(0)}%).`
+      });
+    }
+    if(lastCrm.google_var_pct !== null && lastCrm.google_var_pct !== undefined){
+      const v = lastCrm.google_var_pct;
+      insights.push({
+        sev: Math.abs(v)>50?'warning':'neutral',
+        title:`CRM vs Google (${labelMonth(lastCrm.month)})`,
+        text:`El CRM encontró ${fmtNum(lastCrm.google_crm)} registros vs ${fmtNum(lastCrm.google_reported)} que reportó Google (${v>=0?'+':''}${v.toFixed(0)}%).`
+      });
+    }
+  }
+
+  // 6. Cuello de botella del funnel por canal
+  (ADV.funnel_by_canal||[]).forEach(r=>{
+    const stages = [['CIEC',r.ciec_si_pct],['NIP',r.nip_si_pct],['Paramétrico',r.parametrico_si_pct],['Buró',r.buro_si_pct]];
+    const valid = stages.filter(s=>s[1]!==null && s[1]!==undefined);
+    if(valid.length<2) return;
+    let worst = null;
+    for(let i=1;i<valid.length;i++){
+      const drop = valid[i-1][1] - valid[i][1];
+      if(worst===null || drop>worst.drop) worst = {from:valid[i-1][0], to:valid[i][0], drop};
+    }
+    if(worst && worst.drop>10){
+      insights.push({ sev:'warning', title:`Cuello de botella — ${r.canal}`, text:`La mayor caída del funnel es de ${worst.from} a ${worst.to} (-${worst.drop.toFixed(0)} pts).` });
+    }
+  });
+
+  // 7. Arrendamientos
+  const arrTotal = (ADV.funnel_by_canal||[]).filter(r=>r.canal!=='Sin fuente asignada').reduce((a,r)=>a+(r.arrendamiento_si_n||0),0);
+  insights.push({
+    sev: arrTotal>0?'success':'warning',
+    title:'Arrendamientos firmados (paid media)',
+    text: arrTotal>0 ? `${arrTotal} lead(s) pagado(s) ya firmaron arrendamiento.` : 'Sigue en cero — ningún lead pagado atribuido ha firmado arrendamiento todavía.'
+  });
+
+  return insights;
+}
+
+function buildRuleInsights(){
+  const insights = computeRuleInsights();
+  const el = document.getElementById('ruleInsightsWrap');
+  if(!el) return;
+  if(!insights.length){ el.innerHTML = '<p class="text-muted" style="font-size:.85rem;">Todavía no hay suficientes meses de datos para calcular tendencias.</p>'; return; }
+  el.innerHTML = insights.map(i=>`
+    <div class="kpi-card ${i.sev==='warning'?'warning':(i.sev==='success'?'success':'')}">
+      <div class="kpi-label" style="display:flex; align-items:center; gap:.4rem;">
+        ${i.sev==='warning'?'⚠️':(i.sev==='success'?'✅':'ℹ️')} ${i.title}
+      </div>
+      <div style="font-size:.85rem; color:var(--color-text); margin-top:.3rem; line-height:1.5;">${i.text}</div>
+    </div>`).join('');
+}
+
 function renderAll(){
   buildKPIs();
   buildCanalTotalChart();
@@ -1028,6 +1155,7 @@ function renderAll(){
   buildLagBucketsChart();
   buildBuroAuditTable();
   buildContenidoRankingTable();
+  buildRuleInsights();
 }
 
 renderAll();
