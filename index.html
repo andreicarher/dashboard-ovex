@@ -209,7 +209,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="card">
       <div class="alert warning" style="margin-bottom:1rem;">
         <div class="alert-title">⚠️ Corte de datos del CRM</div>
-        <p>El archivo de CRM tiene datos hasta el 22 de julio de 2026 — puede haber un pequeño rezago entre el corte del CRM y el gasto más reciente de Meta/Google, así que la última semana mostrada podría verse incompleta del lado de CRM.</p>
+        <p>El CRM ("Base Leads con UTM") se conecta en vivo igual que Meta/Google Ads — puede haber un pequeño rezago entre el último registro capturado ahí y el gasto más reciente de Meta/Google, así que la semana más actual podría verse incompleta del lado de CRM hasta que se sincronice.</p>
       </div>
       <div class="chart-container"><canvas id="chartLast8Crm"></canvas></div>
     </div>
@@ -234,7 +234,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
   <!-- ============ TAB: CALIDAD DE LEAD (avanzado, Registrados_por_UTM) ============ -->
   <div id="tab-calidad" class="tab-content">
     <p class="text-muted" style="font-size:.85rem; margin-bottom:1.5rem;">
-      Estos análisis usan <code>Reporte_con_UTM_-_Ovex.csv</code> (leads pagados, Meta + Google, desde feb 2026) — es la misma foto fija del CRM que el resto del dashboard (corte: 22 de julio de 2026).
+      Estos análisis se conectan en vivo a <code>Base Leads con UTM</code> (leads pagados, Meta + Google, desde feb 2026) en el mismo Google Sheet — se recalculan solos cada vez que hay conexión. Si no hay conexión, se usa el último corte guardado.
     </p>
 
     <div class="section-title"><span class="dot crm"></span> Funnel de aprobación completo, por canal</div>
@@ -283,6 +283,8 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 
     <div class="section-title"><span class="dot crm"></span> Distribución de estatus por mes de registro</div>
     <div class="card">
+      <div class="chip-group" id="pipelineMonthChips"></div>
+      <div class="chart-desc" id="pipelineChartDesc"></div>
       <div class="chart-container tall"><canvas id="chartPipeline"></canvas></div>
     </div>
 
@@ -326,7 +328,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 </script>
 
 <script id="advanced-data" type="application/json">
-{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}]}
+{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}], "pipeline_by_week": [{"week": "2026-W15", "week_start": "2026-04-06", "month": "2026-04", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0}, {"week": "2026-W16", "week_start": "2026-04-13", "month": "2026-04", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0}, {"week": "2026-W17", "week_start": "2026-04-20", "month": "2026-04", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1}, {"week": "2026-W18", "week_start": "2026-04-27", "month": "2026-04", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5}, {"week": "2026-W19", "week_start": "2026-05-04", "month": "2026-05", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7}, {"week": "2026-W20", "week_start": "2026-05-11", "month": "2026-05", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3}, {"week": "2026-W21", "week_start": "2026-05-18", "month": "2026-05", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9}, {"week": "2026-W22", "week_start": "2026-05-25", "month": "2026-05", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0}, {"week": "2026-W23", "week_start": "2026-06-01", "month": "2026-06", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0}, {"week": "2026-W24", "week_start": "2026-06-08", "month": "2026-06", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0}, {"week": "2026-W25", "week_start": "2026-06-15", "month": "2026-06", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2}, {"week": "2026-W26", "week_start": "2026-06-22", "month": "2026-06", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0}, {"week": "2026-W27", "week_start": "2026-06-29", "month": "2026-06", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0}, {"week": "2026-W28", "week_start": "2026-07-06", "month": "2026-07", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7}, {"week": "2026-W29", "week_start": "2026-07-13", "month": "2026-07", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8}, {"week": "2026-W30", "week_start": "2026-07-20", "month": "2026-07", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6}]}
 </script>
 
 <script>
@@ -371,6 +373,7 @@ const SEGMENT_LABELS = {
 const SHEET_ID = '11brCIzZA4enbO0qi7gfPvGikiNcwsqDaxMhAbMGxnQc';
 const GVIZ_META_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Query Meta 2026')}`;
 const GVIZ_GOOGLE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Query Google 2026')}`;
+const GVIZ_CRM_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Base Leads con UTM')}`;
 const CUTOFF_DATE = new Date(2026,1,1); // 1 feb 2026
 
 const ETAPA_MAP = {
@@ -383,11 +386,16 @@ const OBJETIVO_FALLBACK = {
   'Campaña Likes a la fanpage FB':'LIKES FB', 'RO_MX_SAL_RTG_Registros':'WEBFORMS'
 };
 
-// static CRM lookups (el cruce con CRM sigue siendo foto fija — no vive en el Sheet)
-const CRM_BY_MONTH = {};
-STATIC.comparison_monthly.forEach(r=>{ CRM_BY_MONTH[r.month] = {meta:r.meta_crm||0, google:r.google_crm||0}; });
-const CRM_BY_WEEK = {};
-STATIC.comparison_weekly.forEach(r=>{ CRM_BY_WEEK[r.week] = {meta:r.meta_crm||0, google:r.google_crm||0}; });
+// CRM lookups — arrancan desde el snapshot estático, se reemplazan si la carga en vivo funciona
+let CRM_BY_MONTH = {};
+let CRM_BY_WEEK = {};
+function buildCrmLookupsFromStatic(){
+  CRM_BY_MONTH = {};
+  STATIC.comparison_monthly.forEach(r=>{ CRM_BY_MONTH[r.month] = {meta:r.meta_crm||0, google:r.google_crm||0}; });
+  CRM_BY_WEEK = {};
+  STATIC.comparison_weekly.forEach(r=>{ CRM_BY_WEEK[r.week] = {meta:r.meta_crm||0, google:r.google_crm||0}; });
+}
+buildCrmLookupsFromStatic();
 
 async function fetchGviz(url){
   const res = await fetch(url);
@@ -402,7 +410,7 @@ function parseGvizDateVal(v){
   if(v===null || v===undefined) return null;
   if(typeof v === 'string' && v.startsWith('Date(')){
     const nums = v.match(/-?\d+/g).map(Number);
-    return new Date(nums[0], nums[1], nums[2]);
+    return new Date(nums[0], nums[1], nums[2], nums[3]||0, nums[4]||0, nums[5]||0);
   }
   return null;
 }
@@ -557,36 +565,237 @@ function rebuildComparisonAndLast8(){
   });
 }
 
-function setLiveBadge(state){
+function classifyPlatformCrm(fuente, medio){
+  if(!fuente) return null;
+  const f = String(fuente).trim().toLowerCase();
+  if(f.includes('google')) return 'Google';
+  if(f==='fb' || f==='ig'){
+    const m = medio ? String(medio).trim().toLowerCase() : '';
+    if(m==='paid') return 'Meta';
+    return null;
+  }
+  return null;
+}
+function normCampaign(s){
+  if(!s) return 'Sin definir';
+  return String(s).trim().replace(/[\s\-\+]+/g, ' ');
+}
+function pctSi(values){
+  const valid = values.filter(v=>v==='SI'||v==='NO');
+  if(!valid.length) return null;
+  const si = valid.filter(v=>v==='SI').length;
+  return Math.round((si/valid.length)*1000)/10;
+}
+
+function processLiveCrm(rows){
+  // columnas: 0 Tipo,1 Estatus cliente,2 ID UTM,3 Fuente,4 Medio,5 Campaña,6 Contenido,7 UTM ID,
+  // 8 Término,9 Primera visita,10 ID Usuario,...,18 CIEC,19 NIP,20 Paramétrico,21 Buró,22 Con arrendamiento,23 Fecha registro
+  const recs = [];
+  for(const r of rows){
+    const fecha = parseGvizDateVal(r[23]);
+    if(!fecha || fecha < CUTOFF_DATE) continue;
+    const platform = classifyPlatformCrm(r[3], r[4]);
+    if(!platform) continue;
+    const primeraVisita = parseGvizDateVal(r[9]);
+    recs.push({
+      platform, estatus: r[1], campaign: normCampaign(r[5]), contenido: r[6],
+      fecha, primeraVisita,
+      ciec: r[18], nip: r[19], parametrico: r[20], buro: r[21], arrendamiento: r[22],
+      week: weekKeyOf(fecha), week_start: weekStartOf(fecha), month: monthKeyOf(fecha),
+    });
+  }
+
+  // CRM by month/week (para comparison + last8)
+  const crmMonth = {}, crmWeek = {};
+  recs.forEach(rec=>{
+    crmMonth[rec.month] = crmMonth[rec.month] || {meta:0, google:0};
+    crmMonth[rec.month][rec.platform==='Meta'?'meta':'google']++;
+    crmWeek[rec.week] = crmWeek[rec.week] || {meta:0, google:0};
+    crmWeek[rec.week][rec.platform==='Meta'?'meta':'google']++;
+  });
+
+  // Funnel por canal (Meta, Google)
+  const funnelByCanal = ['Meta','Google'].map(canal=>{
+    const sub = recs.filter(r=>r.platform===canal);
+    return {
+      canal, total: sub.length,
+      ciec_si_pct: pctSi(sub.map(r=>r.ciec)), ciec_si_n: sub.filter(r=>r.ciec==='SI').length,
+      nip_si_pct: pctSi(sub.map(r=>r.nip)), nip_si_n: sub.filter(r=>r.nip==='SI').length,
+      parametrico_si_pct: pctSi(sub.map(r=>r.parametrico)), parametrico_si_n: sub.filter(r=>r.parametrico==='SI').length,
+      buro_si_pct: pctSi(sub.map(r=>r.buro)), buro_si_n: sub.filter(r=>r.buro==='SI').length,
+      arrendamiento_si_n: sub.filter(r=>r.arrendamiento==='SI').length,
+    };
+  });
+  // agrega la entrada estática de "Sin fuente asignada" (no vive en este Sheet)
+  const sinFuente = (ADV_STATIC.funnel_by_canal||[]).find(r=>r.canal==='Sin fuente asignada');
+  if(sinFuente) funnelByCanal.push(sinFuente);
+
+  // Arrendamientos
+  const arrendamientoSummary = {
+    meta_count: recs.filter(r=>r.platform==='Meta' && r.arrendamiento==='SI').length,
+    google_count: recs.filter(r=>r.platform==='Google' && r.arrendamiento==='SI').length,
+    organico_count: ADV_STATIC.arrendamiento_summary?.organico_count ?? 0,
+    organico_count_alltime: ADV_STATIC.arrendamiento_summary?.organico_count_alltime ?? 0,
+  };
+
+  // Tiempo de conversion
+  const lagLabels = ['Registro previo al clic (atípico)','Mismo día','1 día','2-3 días','4-7 días','8+ días'];
+  function lagBucketOf(days){
+    if(days<0) return lagLabels[0];
+    if(days===0) return lagLabels[1];
+    if(days===1) return lagLabels[2];
+    if(days<=3) return lagLabels[3];
+    if(days<=7) return lagLabels[4];
+    return lagLabels[5];
+  }
+  let nValid=0, nExcluded=0, sumDays=0; const validDaysArr=[];
+  const bucketCounts = Object.fromEntries(lagLabels.map(l=>[l,0]));
+  recs.forEach(r=>{
+    if(!r.primeraVisita) return;
+    const regDateOnly = new Date(r.fecha.getFullYear(), r.fecha.getMonth(), r.fecha.getDate());
+    const visitDateOnly = new Date(r.primeraVisita.getFullYear(), r.primeraVisita.getMonth(), r.primeraVisita.getDate());
+    const days = Math.round((regDateOnly - visitDateOnly)/86400000);
+    bucketCounts[lagBucketOf(days)]++;
+    if(days>=0){ nValid++; sumDays+=days; validDaysArr.push(days); }
+    else nExcluded++;
+  });
+  const lagBuckets = lagLabels.map(l=>({bucket:l, count:bucketCounts[l]}));
+  validDaysArr.sort((a,b)=>a-b);
+  const median = validDaysArr.length ? (validDaysArr.length%2 ? validDaysArr[(validDaysArr.length-1)/2] : (validDaysArr[validDaysArr.length/2-1]+validDaysArr[validDaysArr.length/2])/2) : null;
+  const lagStats = { n_valid:nValid, n_excluded:nExcluded, mean_days: nValid?Math.round((sumDays/nValid)*100)/100:null, median_days: median };
+
+  // Auditoria Buro=SI + Rechazado por campaña
+  const rechMap = {};
+  recs.filter(r=>r.estatus==='Rechazado').forEach(r=>{
+    rechMap[r.campaign] = rechMap[r.campaign] || {total:0, buroSi:0};
+    rechMap[r.campaign].total++;
+    if(r.buro==='SI') rechMap[r.campaign].buroSi++;
+  });
+  const buroAudit = Object.entries(rechMap).map(([camp,v])=>({
+    Campana_norm: camp, rechazado_buro_si: v.buroSi, total_rechazado: v.total,
+    pct: Math.round((v.buroSi/v.total)*1000)/10,
+  })).sort((a,b)=>b.rechazado_buro_si - a.rechazado_buro_si);
+
+  // Ranking de Contenido
+  const contMap = {};
+  recs.forEach(r=>{
+    if(!r.contenido || /^\d+$/.test(String(r.contenido).trim())) return;
+    contMap[r.contenido] = contMap[r.contenido] || [];
+    contMap[r.contenido].push(r);
+  });
+  const contenidoRanking = Object.entries(contMap)
+    .filter(([,arr])=>arr.length>=10)
+    .map(([contenido,arr])=>({
+      contenido, registros: arr.length,
+      onboarded_pct: Math.round((arr.filter(r=>r.estatus==='Onboarded').length/arr.length)*1000)/10,
+      rechazado_pct: Math.round((arr.filter(r=>r.estatus==='Rechazado').length/arr.length)*1000)/10,
+      ciec_si_pct: pctSi(arr.map(r=>r.ciec)),
+      buro_si_pct: pctSi(arr.map(r=>r.buro)),
+    }))
+    .sort((a,b)=>b.onboarded_pct - a.onboarded_pct);
+
+  // Pipeline por mes y semana
+  function pipelineRows(groupKeyFn, keyName){
+    const map = {};
+    recs.forEach(r=>{
+      const k = groupKeyFn(r);
+      map[k] = map[k] || {onboarding:0, onboarded:0, rechazado:0, week_start:r.week_start, month:r.month};
+      if(r.estatus==='Onboarding') map[k].onboarding++;
+      else if(r.estatus==='Onboarded') map[k].onboarded++;
+      else if(r.estatus==='Rechazado') map[k].rechazado++;
+    });
+    return Object.entries(map).map(([k,v])=>{
+      const total = v.onboarding+v.onboarded+v.rechazado;
+      const row = { total,
+        onboarding_n:v.onboarding, onboarding_pct: total?Math.round((v.onboarding/total)*1000)/10:null,
+        onboarded_n:v.onboarded, onboarded_pct: total?Math.round((v.onboarded/total)*1000)/10:null,
+        rechazado_n:v.rechazado, rechazado_pct: total?Math.round((v.rechazado/total)*1000)/10:null,
+      };
+      row[keyName] = k;
+      if(keyName==='week'){ row.week_start = v.week_start; row.month = v.month; }
+      return row;
+    }).sort((a,b)=> keyName==='month' ? a.month.localeCompare(b.month) : a.week_start.localeCompare(b.week_start));
+  }
+  const pipelineByMonth = pipelineRows(r=>r.month, 'month');
+  const pipelineByWeek = pipelineRows(r=>r.week, 'week');
+
+  return {
+    crmMonth, crmWeek, funnelByCanal, arrendamientoSummary,
+    lagBuckets, lagStats, buroAudit, contenidoRanking,
+    pipelineByMonth, pipelineByWeek,
+  };
+}
+
+function setLiveBadge(state, crmState){
   const el = document.getElementById('liveStatusBadge');
   if(!el) return;
   const stamp = new Date().toLocaleString('es-MX', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
   if(state===null){
     el.className = 'live-badge live-loading';
     el.innerHTML = '🔄 Conectando con Google Sheets…';
-  } else if(state===true){
+    return;
+  }
+  const parts = [];
+  parts.push(state ? 'Meta + Google Ads' : null);
+  parts.push(crmState ? 'CRM (Base Leads con UTM)' : null);
+  const okParts = parts.filter(Boolean);
+  if(state && crmState){
     el.className = 'live-badge live-ok';
-    el.innerHTML = `🟢 Datos en vivo desde Google Sheets (Meta + Google Ads) — cargado ${stamp}`;
+    el.innerHTML = `🟢 Datos en vivo desde Google Sheets (Meta + Google Ads + CRM) — cargado ${stamp}`;
+  } else if(okParts.length){
+    el.className = 'live-badge live-ok';
+    el.innerHTML = `🟡 Parcialmente en vivo (${okParts.join(', ')}) — el resto usa el último corte guardado. Cargado ${stamp}`;
   } else {
     el.className = 'live-badge live-fail';
-    el.innerHTML = '🟡 No se pudo conectar en vivo — mostrando el último corte guardado (Meta/Google: 21 jul · CRM: 1 jul 2026)';
+    el.innerHTML = '🟡 No se pudo conectar en vivo — mostrando el último corte guardado.';
   }
 }
 
 async function loadLiveData(){
-  try{
-    const [metaRows, googleRows] = await Promise.all([fetchGviz(GVIZ_META_URL), fetchGviz(GVIZ_GOOGLE_URL)]);
-    const metaProcessed = processLiveMeta(metaRows);
-    const googleProcessed = processLiveGoogle(googleRows);
+  const [metaGoogleResult, crmResult] = await Promise.allSettled([
+    (async()=>{
+      const [metaRows, googleRows] = await Promise.all([fetchGviz(GVIZ_META_URL), fetchGviz(GVIZ_GOOGLE_URL)]);
+      return { metaProcessed: processLiveMeta(metaRows), googleProcessed: processLiveGoogle(googleRows) };
+    })(),
+    (async()=>{
+      const crmRows = await fetchGviz(GVIZ_CRM_URL);
+      return processLiveCrm(crmRows);
+    })(),
+  ]);
+
+  let metaOk = false, crmOk = false;
+
+  if(metaGoogleResult.status==='fulfilled'){
+    const { metaProcessed, googleProcessed } = metaGoogleResult.value;
     Object.assign(ACTIVE, metaProcessed, googleProcessed);
-    rebuildComparisonAndLast8();
     if(!ACTIVE.months_available.includes(currentMonth)) currentMonth = 'all';
-    setLiveBadge(true);
-    renderAll();
-  }catch(err){
-    console.warn('No se pudo cargar datos en vivo de Google Sheets, se usa el corte estático.', err);
-    setLiveBadge(false);
+    metaOk = true;
+  } else {
+    console.warn('No se pudo cargar Meta/Google en vivo, se usa el corte estático.', metaGoogleResult.reason);
   }
+
+  if(crmResult.status==='fulfilled'){
+    const crm = crmResult.value;
+    CRM_BY_MONTH = crm.crmMonth;
+    CRM_BY_WEEK = crm.crmWeek;
+    ADV.funnel_by_canal = crm.funnelByCanal;
+    ADV.arrendamiento_summary = crm.arrendamientoSummary;
+    ADV.lag_buckets = crm.lagBuckets;
+    ADV.lag_stats = crm.lagStats;
+    ADV.buro_audit = crm.buroAudit;
+    ADV.contenido_ranking = crm.contenidoRanking;
+    ADV.pipeline_by_month = crm.pipelineByMonth;
+    ADV.pipeline_by_week = crm.pipelineByWeek;
+    if(!pipelineMonthsAvailable().includes(pipelineMonth)) pipelineMonth = 'all';
+    crmOk = true;
+  } else {
+    console.warn('No se pudo cargar CRM en vivo, se usa el corte estático.', crmResult.reason);
+    buildCrmLookupsFromStatic();
+  }
+
+  rebuildComparisonAndLast8();
+  setLiveBadge(metaOk, crmOk);
+  renderAll();
 }
 
 // -------------------- TAB SWITCHING --------------------
@@ -608,16 +817,18 @@ function buildKPIs(){
   const crmMetaTotal = ACTIVE.comparison_monthly.reduce((a,r)=>a+(r.meta_crm||0),0);
   const crmGoogleTotal = ACTIVE.comparison_monthly.reduce((a,r)=>a+(r.google_crm||0),0);
   const metaReportedTotal = ACTIVE.comparison_monthly.reduce((a,r)=>a+(r.meta_reported||0),0);
+  const googleReportedTotal = ACTIVE.comparison_monthly.reduce((a,r)=>a+(r.google_reported||0),0);
 
   const totalInversion = metaTotals.cost + googleTotals.cost;
   const overallVar = metaReportedTotal ? ((crmMetaTotal-metaReportedTotal)/metaReportedTotal*100) : null;
+  const overallVarGoogle = googleReportedTotal ? ((crmGoogleTotal-googleReportedTotal)/googleReportedTotal*100) : null;
 
   const cards = [
     {label:'Inversión total (Meta + Google)', value: fmtMoney(totalInversion), sub:`Meta: ${fmtMoney(metaTotals.cost)} · Google: ${fmtMoney(googleTotals.cost)}`, cls:''},
     {label:'Registros de sitio (Meta, propio)', value: fmtNum(metaTotals.web_reg), sub:`Costo por registro: ${fmtMoney2(metaTotals.web_reg? metaTotals.cost/metaTotals.web_reg:0)}`, cls:'success'},
     {label:'Conversaciones WhatsApp iniciadas', value: fmtNum(metaTotals.msg_conv), sub:'Campañas objetivo MENSAJES', cls:''},
     {label:'Leads CRM atribuidos a Meta (UTM)', value: fmtNum(crmMetaTotal), sub:`vs. ${fmtNum(metaReportedTotal)} reportado por Meta (${fmtPct(overallVar)})`, cls:'crm'},
-    {label:'Leads CRM atribuidos a Google (UTM)', value: fmtNum(crmGoogleTotal), sub:'Campaña de Google arrancó después del corte del CRM', cls:'crm'},
+    {label:'Leads CRM atribuidos a Google (UTM)', value: fmtNum(crmGoogleTotal), sub: crmGoogleTotal>0 ? `vs. ${fmtNum(googleReportedTotal)} reportado por Google (${fmtPct(overallVarGoogle)})` : 'Sin registros de CRM todavía para Google', cls:'crm'},
     {label:'Google Ads — clics / conversiones', value: `${fmtNum(googleTotals.clicks)} / ${fmtNum(googleTotals.conversions)}`, sub:'Últimos 11 días (10–21 jul)', cls:'google'},
   ];
 
@@ -958,7 +1169,8 @@ function buildComparisonTable(){
     </table>`;
 }
 
-const ADV = JSON.parse(document.getElementById('advanced-data').textContent);
+const ADV_STATIC = JSON.parse(document.getElementById('advanced-data').textContent);
+let ADV = JSON.parse(JSON.stringify(ADV_STATIC));
 
 // -------------------- CALIDAD DE LEAD (avanzado) --------------------
 function buildFunnelCanalChart(){
@@ -1058,12 +1270,45 @@ function buildContenidoRankingTable(){
 
 // -------------------- INIT --------------------
 // -------------------- Pipeline Actual --------------------
+let pipelineMonth = 'all';
+
+function getPipelineData(){
+  if(pipelineMonth==='all'){
+    return { rows: ADV.pipeline_by_month || [], keyField:'month', labelFn:labelMonth };
+  }
+  const rows = (ADV.pipeline_by_week || []).filter(r=>r.month===pipelineMonth);
+  return { rows, keyField:'week', labelFn:labelWeek };
+}
+
+function pipelineMonthsAvailable(){
+  const fromMonthly = (ADV.pipeline_by_month||[]).map(r=>r.month);
+  return [...new Set(fromMonthly)].sort();
+}
+
+function buildPipelineMonthChips(){
+  const months = ['all', ...pipelineMonthsAvailable()];
+  document.getElementById('pipelineMonthChips').innerHTML = months.map(m=>{
+    const label = m==='all' ? 'Todos' : labelMonth(m);
+    return `<button class="chip-btn ${m===pipelineMonth?'active':''}" data-month="${m}" onclick="setPipelineMonth('${m}')">${label}</button>`;
+  }).join('');
+}
+
+function setPipelineMonth(m){
+  pipelineMonth = m;
+  document.querySelectorAll('#pipelineMonthChips .chip-btn').forEach(b=>b.classList.toggle('active', b.dataset.month===m));
+  buildPipelineChart();
+  buildPipelineTable();
+}
+
 function buildPipelineChart(){
-  const rows = ADV.pipeline_by_month || [];
+  const {rows, keyField, labelFn} = getPipelineData();
+  document.getElementById('pipelineChartDesc').textContent = pipelineMonth==='all'
+    ? 'Vista mensual — cada barra es una cohorte completa de registro'
+    : `Desglose semanal de ${labelMonth(pipelineMonth)} 2026 — mismas cohortes, vistas semana a semana`;
   renderChart('chartPipeline', {
     type:'bar',
     data:{
-      labels: rows.map(r=>labelMonth(r.month)),
+      labels: rows.map(r=>labelFn(r[keyField])),
       datasets:[
         {label:'Onboarding', data: rows.map(r=>r.onboarding_pct), backgroundColor:'#f39c12', stack:'s', borderRadius:3},
         {label:'Onboarded', data: rows.map(r=>r.onboarded_pct), backgroundColor:'#5dcaa5', stack:'s', borderRadius:3},
@@ -1086,16 +1331,16 @@ function buildPipelineChart(){
 }
 
 function buildPipelineTable(){
-  const rows = ADV.pipeline_by_month || [];
+  const {rows, keyField, labelFn} = getPipelineData();
   document.getElementById('pipelineTableWrap').innerHTML = `
     <table>
       <thead>
-        <tr><th>Mes</th><th style="text-align:right;">Total leads</th><th style="text-align:right;">Onboarding</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">Rechazado</th></tr>
+        <tr><th>${pipelineMonth==='all'?'Mes':'Semana'}</th><th style="text-align:right;">Total leads</th><th style="text-align:right;">Onboarding</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">Rechazado</th></tr>
       </thead>
       <tbody>
         ${rows.map(r=>`
           <tr>
-            <td class="row-label">${labelMonth(r.month)}</td>
+            <td class="row-label">${labelFn(r[keyField])}</td>
             <td style="text-align:right;">${fmtNum(r.total)}</td>
             <td style="text-align:right;">${fmtNum(r.onboarding_n)} (${r.onboarding_pct}%)</td>
             <td style="text-align:right; color:#5dcaa5;">${fmtNum(r.onboarded_n)} (${r.onboarded_pct}%)</td>
@@ -1243,6 +1488,7 @@ function renderAll(){
   buildLagBucketsChart();
   buildBuroAuditTable();
   buildContenidoRankingTable();
+  buildPipelineMonthChips();
   buildPipelineChart();
   buildPipelineTable();
   buildPipelineStuckAlert();
