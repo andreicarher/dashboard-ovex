@@ -293,6 +293,19 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     </div>
 
     <div id="pipelineStuckAlert"></div>
+
+    <div class="section-title"><span class="dot"></span> Tendencia semanal de calidad (perfilado)</div>
+    <div class="card">
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:.6rem;">
+        Todas las semanas disponibles (no solo las últimas), para que puedas ubicar tú mismo si un cambio de presupuesto, comunicación o creativo coincide con una mejora o un empeoramiento. Barras = leads registrados esa semana. Líneas = % Rechazado, % Onboarded (de estatus actual) y % Buró aprobado (de los evaluados).
+      </p>
+      <div class="chart-container tall"><canvas id="chartWeeklyQuality"></canvas></div>
+      <div class="chart-legend-note">⚠️ Las últimas 1-2 semanas casi siempre se ven "peor" en Rechazado/Onboarded simplemente porque no les ha dado tiempo de resolverse — la mayoría todavía está en Onboarding. No lo leas como una caída de calidad real hasta que pasen 2-3 semanas más.</div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="table-scroll" id="weeklyQualityTableWrap"></div>
+    </div>
   </div>
 
   <!-- ============ TAB: INSIGHTS Y OPTIMIZACIONES ============ -->
@@ -328,7 +341,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 </script>
 
 <script id="advanced-data" type="application/json">
-{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}], "pipeline_by_week": [{"week": "2026-W15", "week_start": "2026-04-06", "month": "2026-04", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0}, {"week": "2026-W16", "week_start": "2026-04-13", "month": "2026-04", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0}, {"week": "2026-W17", "week_start": "2026-04-20", "month": "2026-04", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1}, {"week": "2026-W18", "week_start": "2026-04-27", "month": "2026-04", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5}, {"week": "2026-W19", "week_start": "2026-05-04", "month": "2026-05", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7}, {"week": "2026-W20", "week_start": "2026-05-11", "month": "2026-05", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3}, {"week": "2026-W21", "week_start": "2026-05-18", "month": "2026-05", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9}, {"week": "2026-W22", "week_start": "2026-05-25", "month": "2026-05", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0}, {"week": "2026-W23", "week_start": "2026-06-01", "month": "2026-06", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0}, {"week": "2026-W24", "week_start": "2026-06-08", "month": "2026-06", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0}, {"week": "2026-W25", "week_start": "2026-06-15", "month": "2026-06", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2}, {"week": "2026-W26", "week_start": "2026-06-22", "month": "2026-06", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0}, {"week": "2026-W27", "week_start": "2026-06-29", "month": "2026-06", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0}, {"week": "2026-W28", "week_start": "2026-07-06", "month": "2026-07", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7}, {"week": "2026-W29", "week_start": "2026-07-13", "month": "2026-07", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8}, {"week": "2026-W30", "week_start": "2026-07-20", "month": "2026-07", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6}]}
+{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}], "pipeline_by_week": [{"week": "2026-W15", "week_start": "2026-04-06", "month": "2026-04", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0}, {"week": "2026-W16", "week_start": "2026-04-13", "month": "2026-04", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0}, {"week": "2026-W17", "week_start": "2026-04-20", "month": "2026-04", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1}, {"week": "2026-W18", "week_start": "2026-04-27", "month": "2026-04", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5}, {"week": "2026-W19", "week_start": "2026-05-04", "month": "2026-05", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7}, {"week": "2026-W20", "week_start": "2026-05-11", "month": "2026-05", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3}, {"week": "2026-W21", "week_start": "2026-05-18", "month": "2026-05", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9}, {"week": "2026-W22", "week_start": "2026-05-25", "month": "2026-05", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0}, {"week": "2026-W23", "week_start": "2026-06-01", "month": "2026-06", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0}, {"week": "2026-W24", "week_start": "2026-06-08", "month": "2026-06", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0}, {"week": "2026-W25", "week_start": "2026-06-15", "month": "2026-06", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2}, {"week": "2026-W26", "week_start": "2026-06-22", "month": "2026-06", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0}, {"week": "2026-W27", "week_start": "2026-06-29", "month": "2026-06", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0}, {"week": "2026-W28", "week_start": "2026-07-06", "month": "2026-07", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7}, {"week": "2026-W29", "week_start": "2026-07-13", "month": "2026-07", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8}, {"week": "2026-W30", "week_start": "2026-07-20", "month": "2026-07", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6}], "weekly_quality": [{"week": "2026-W15", "week_start": "2026-04-06", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"week": "2026-W16", "week_start": "2026-04-13", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0, "ciec_si_pct": 4.0, "nip_si_pct": 20.0, "buro_si_pct": 22.2}, {"week": "2026-W17", "week_start": "2026-04-20", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1, "ciec_si_pct": 0.0, "nip_si_pct": 17.0, "buro_si_pct": 11.1}, {"week": "2026-W18", "week_start": "2026-04-27", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5, "ciec_si_pct": 3.7, "nip_si_pct": 33.3, "buro_si_pct": 11.8}, {"week": "2026-W19", "week_start": "2026-05-04", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7, "ciec_si_pct": 0.0, "nip_si_pct": 23.7, "buro_si_pct": 0.0}, {"week": "2026-W20", "week_start": "2026-05-11", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3, "ciec_si_pct": 5.6, "nip_si_pct": 33.3, "buro_si_pct": 16.7}, {"week": "2026-W21", "week_start": "2026-05-18", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9, "ciec_si_pct": 3.9, "nip_si_pct": 36.2, "buro_si_pct": 4.7}, {"week": "2026-W22", "week_start": "2026-05-25", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0, "ciec_si_pct": 1.2, "nip_si_pct": 50.0, "buro_si_pct": 7.5}, {"week": "2026-W23", "week_start": "2026-06-01", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0, "ciec_si_pct": 4.9, "nip_si_pct": 52.9, "buro_si_pct": 11.3}, {"week": "2026-W24", "week_start": "2026-06-08", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0, "ciec_si_pct": 1.2, "nip_si_pct": 40.2, "buro_si_pct": 3.0}, {"week": "2026-W25", "week_start": "2026-06-15", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2, "ciec_si_pct": 2.8, "nip_si_pct": 39.4, "buro_si_pct": 14.3}, {"week": "2026-W26", "week_start": "2026-06-22", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0, "ciec_si_pct": 2.0, "nip_si_pct": 48.0, "buro_si_pct": 16.7}, {"week": "2026-W27", "week_start": "2026-06-29", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0, "ciec_si_pct": 0.0, "nip_si_pct": 21.4, "buro_si_pct": 11.1}, {"week": "2026-W28", "week_start": "2026-07-06", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7, "ciec_si_pct": 2.7, "nip_si_pct": 33.8, "buro_si_pct": 8.7}, {"week": "2026-W29", "week_start": "2026-07-13", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8, "ciec_si_pct": 0.8, "nip_si_pct": 48.3, "buro_si_pct": 7.7}, {"week": "2026-W30", "week_start": "2026-07-20", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6, "ciec_si_pct": 2.3, "nip_si_pct": 40.9, "buro_si_pct": 5.9}]}
 </script>
 
 <script>
@@ -719,10 +732,33 @@ function processLiveCrm(rows){
   const pipelineByMonth = pipelineRows(r=>r.month, 'month');
   const pipelineByWeek = pipelineRows(r=>r.week, 'week');
 
+  // Tendencia semanal de calidad (todas las semanas, para detectar quiebres)
+  const weekGroups = {};
+  recs.forEach(r=>{
+    if(!weekGroups[r.week]) weekGroups[r.week] = { week_start:r.week_start, items:[] };
+    weekGroups[r.week].items.push(r);
+  });
+  const weeklyQuality = Object.entries(weekGroups).map(([week, g])=>{
+    const items = g.items;
+    const total = items.length;
+    const onboarding_n = items.filter(r=>r.estatus==='Onboarding').length;
+    const onboarded_n = items.filter(r=>r.estatus==='Onboarded').length;
+    const rechazado_n = items.filter(r=>r.estatus==='Rechazado').length;
+    return {
+      week, week_start: g.week_start, total,
+      onboarding_n, onboarding_pct: total?Math.round((onboarding_n/total)*1000)/10:null,
+      onboarded_n, onboarded_pct: total?Math.round((onboarded_n/total)*1000)/10:null,
+      rechazado_n, rechazado_pct: total?Math.round((rechazado_n/total)*1000)/10:null,
+      ciec_si_pct: pctSi(items.map(r=>r.ciec)),
+      nip_si_pct: pctSi(items.map(r=>r.nip)),
+      buro_si_pct: pctSi(items.map(r=>r.buro)),
+    };
+  }).sort((a,b)=>a.week_start.localeCompare(b.week_start));
+
   return {
     crmMonth, crmWeek, funnelByCanal, arrendamientoSummary,
     lagBuckets, lagStats, buroAudit, contenidoRanking,
-    pipelineByMonth, pipelineByWeek,
+    pipelineByMonth, pipelineByWeek, weeklyQuality,
   };
 }
 
@@ -786,6 +822,7 @@ async function loadLiveData(){
     ADV.contenido_ranking = crm.contenidoRanking;
     ADV.pipeline_by_month = crm.pipelineByMonth;
     ADV.pipeline_by_week = crm.pipelineByWeek;
+    ADV.weekly_quality = crm.weeklyQuality;
     if(!pipelineMonthsAvailable().includes(pipelineMonth)) pipelineMonth = 'all';
     crmOk = true;
   } else {
@@ -1367,6 +1404,54 @@ function buildPipelineStuckAlert(){
   }
 }
 
+function buildWeeklyQualityChart(){
+  const rows = ADV.weekly_quality || [];
+  renderChart('chartWeeklyQuality', {
+    data:{
+      labels: rows.map(r=>labelWeek(r.week)),
+      datasets:[
+        {type:'bar', label:'Leads registrados', data: rows.map(r=>r.total), backgroundColor:'rgba(157,103,221,.35)', yAxisID:'y', borderRadius:3, order:3},
+        {type:'line', label:'% Rechazado', data: rows.map(r=>r.rechazado_pct), borderColor:'#e07a7a', backgroundColor:'#e07a7a', yAxisID:'y1', tension:.3, order:1},
+        {type:'line', label:'% Onboarded', data: rows.map(r=>r.onboarded_pct), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:1},
+        {type:'line', label:'% Buró aprobado', data: rows.map(r=>r.buro_si_pct), borderColor:'#5b9bff', backgroundColor:'#5b9bff', yAxisID:'y1', tension:.3, order:1, borderDash:[5,3]},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
+      scales:{
+        x:{ grid:{color:gridColor} },
+        y:{ position:'left', grid:{color:gridColor}, title:{display:true,text:'Leads registrados',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, min:0, max:100, ticks:{callback:v=>v+'%'}, title:{display:true,text:'%',color:textMuted} },
+      }
+    }
+  });
+}
+
+function buildWeeklyQualityTable(){
+  const rows = ADV.weekly_quality || [];
+  document.getElementById('weeklyQualityTableWrap').innerHTML = `
+    <table>
+      <thead>
+        <tr><th>Semana</th><th style="text-align:right;">Registros</th><th style="text-align:right;">Onboarding</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">Rechazado</th><th style="text-align:right;">CIEC SI</th><th style="text-align:right;">NIP SI</th><th style="text-align:right;">Buró SI</th></tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td class="row-label">${labelWeek(r.week)}</td>
+            <td style="text-align:right;">${fmtNum(r.total)}</td>
+            <td style="text-align:right;">${r.onboarding_pct}%</td>
+            <td style="text-align:right; color:#5dcaa5;">${r.onboarded_pct}%</td>
+            <td style="text-align:right; color:#e07a7a;">${r.rechazado_pct}%</td>
+            <td style="text-align:right;">${r.ciec_si_pct===null?'—':r.ciec_si_pct+'%'}</td>
+            <td style="text-align:right;">${r.nip_si_pct===null?'—':r.nip_si_pct+'%'}</td>
+            <td style="text-align:right; color:#8ec7f0;">${r.buro_si_pct===null?'—':r.buro_si_pct+'%'}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+
 
 // -------------------- Insights automáticos (Capa 1: reglas) --------------------
 function pct(a,b){ return b ? ((a-b)/b*100) : null; }
@@ -1492,6 +1577,8 @@ function renderAll(){
   buildPipelineChart();
   buildPipelineTable();
   buildPipelineStuckAlert();
+  buildWeeklyQualityChart();
+  buildWeeklyQualityTable();
   buildRuleInsights();
 }
 
