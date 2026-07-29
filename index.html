@@ -252,7 +252,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
   <!-- ============ TAB: CALIDAD DE LEAD (avanzado, Registrados_por_UTM) ============ -->
   <div id="tab-calidad" class="tab-content">
     <p class="text-muted" style="font-size:.85rem; margin-bottom:1.5rem;">
-      Estos análisis se conectan en vivo a <code>Base Leads con UTM</code> (leads pagados, Meta + Google, desde feb 2026) en el mismo Google Sheet — se recalculan solos cada vez que hay conexión. Si no hay conexión, se usa el último corte guardado.
+      Estos análisis se conectan en vivo a <code>Base Leads con UTM</code> (Meta + Google, desde feb 2026) y <code>Base Leads sin UTM</code> ("Sin fuente asignada") en el mismo Google Sheet — se recalculan solos cada vez que hay conexión. Si no hay conexión, se usa el último corte guardado.
     </p>
 
     <div class="section-title"><span class="dot crm"></span> Funnel Lead → MQL → SQL → Customer, por canal</div>
@@ -426,6 +426,7 @@ const SHEET_ID = '11brCIzZA4enbO0qi7gfPvGikiNcwsqDaxMhAbMGxnQc';
 const GVIZ_META_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Query Meta 2026')}`;
 const GVIZ_GOOGLE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Query Google 2026')}`;
 const GVIZ_CRM_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Base Leads con UTM')}`;
+const GVIZ_SIN_UTM_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Base Leads sin UTM')}`;
 const CUTOFF_DATE = new Date(2026,1,1); // 1 feb 2026
 
 const ETAPA_MAP = {
@@ -639,6 +640,60 @@ function pctSi(values){
   return Math.round((si/valid.length)*1000)/10;
 }
 
+// Taxonomía Lead / MQL / SQL / Customer / Rechazado (compartida entre CRM con UTM y sin UTM)
+function classifyStage(r){
+  if(r.arrendamiento==='SI') return 'Customer';
+  if(r.estatus==='Onboarding') return 'Lead';
+  if(r.estatus==='Onboarded'){
+    const nip = r.nip==='SI', buro = r.buro==='SI', param = r.parametrico==='SI';
+    if(nip && buro && param) return 'SQL';
+    if(nip) return 'MQL';
+    return 'Onboarded sin calificar';
+  }
+  if(r.estatus==='Rechazado') return 'Rechazado';
+  return 'Sin clasificar';
+}
+function buildStageStats(items, canalName){
+  const total = items.length;
+  const counts = {};
+  items.forEach(r=>{ const s = classifyStage(r); counts[s] = (counts[s]||0)+1; });
+  const rech = items.filter(r=>r.estatus==='Rechazado');
+  const rechNipSi = rech.filter(r=>r.nip==='SI').length;
+  const rechBuroSi = rech.filter(r=>r.buro==='SI').length;
+  const pct = (n)=> total ? Math.round((n/total)*1000)/10 : null;
+  return {
+    canal: canalName, total,
+    lead_n: counts['Lead']||0, lead_pct: pct(counts['Lead']||0),
+    onboarded_sin_calificar_n: counts['Onboarded sin calificar']||0, onboarded_sin_calificar_pct: pct(counts['Onboarded sin calificar']||0),
+    mql_n: counts['MQL']||0, mql_pct: pct(counts['MQL']||0),
+    sql_n: counts['SQL']||0, sql_pct: pct(counts['SQL']||0),
+    customer_n: counts['Customer']||0, customer_pct: pct(counts['Customer']||0),
+    rechazado_n: counts['Rechazado']||0, rechazado_pct: pct(counts['Rechazado']||0),
+    rechazado_nip_si_n: rechNipSi, rechazado_nip_si_pct: rech.length ? Math.round((rechNipSi/rech.length)*1000)/10 : null,
+    rechazado_buro_si_n: rechBuroSi, rechazado_buro_si_pct: rech.length ? Math.round((rechBuroSi/rech.length)*1000)/10 : null,
+  };
+}
+
+// "Base Leads sin UTM" -- mismas 24 columnas, sin Fuente/Medio (todo es un solo canal)
+function processLiveSinUtm(rows){
+  const recs = [];
+  for(const r of rows){
+    const fecha = parseGvizDateVal(r[23]);
+    if(!fecha || fecha < CUTOFF_DATE) continue;
+    recs.push({
+      estatus: r[1], nip: r[19], parametrico: r[20], buro: r[21], arrendamiento: r[22],
+      week: weekKeyOf(fecha), week_start: weekStartOf(fecha), month: monthKeyOf(fecha),
+    });
+  }
+  const stats = buildStageStats(recs, 'Sin fuente asignada');
+  const stageRecords = recs.map(r=>({platform:'Sin fuente asignada', month:r.month, week:r.week, week_start:r.week_start, stage:classifyStage(r)}));
+  // arrendamientos: dentro del corte feb+ y en todo el histórico (sin cutoff) para contexto
+  const customerCutoff = recs.filter(r=>r.arrendamiento==='SI').length;
+  let customerAlltime = 0;
+  for(const r of rows){ if(r[22]==='SI') customerAlltime++; }
+  return { stats, stageRecords, customerCutoff, customerAlltime };
+}
+
 function processLiveCrm(rows){
   // columnas: 0 Tipo,1 Estatus cliente,2 ID UTM,3 Fuente,4 Medio,5 Campaña,6 Contenido,7 UTM ID,
   // 8 Término,9 Primera visita,10 ID Usuario,...,18 CIEC,19 NIP,20 Paramétrico,21 Buró,22 Con arrendamiento,23 Fecha registro
@@ -770,39 +825,6 @@ function processLiveCrm(rows){
   const sinFuente = (ADV_STATIC.funnel_by_canal||[]).find(r=>r.canal==='Sin fuente asignada');
   if(sinFuente) funnelByCanal.push(sinFuente);
 
-  // Taxonomía Lead / MQL / SQL / Customer / Rechazado
-  function classifyStage(r){
-    if(r.arrendamiento==='SI') return 'Customer';
-    if(r.estatus==='Onboarding') return 'Lead';
-    if(r.estatus==='Onboarded'){
-      const nip = r.nip==='SI', buro = r.buro==='SI', param = r.parametrico==='SI';
-      if(nip && buro && param) return 'SQL';
-      if(nip) return 'MQL';
-      return 'Onboarded sin calificar';
-    }
-    if(r.estatus==='Rechazado') return 'Rechazado';
-    return 'Sin clasificar';
-  }
-  function buildStageStats(items, canalName){
-    const total = items.length;
-    const counts = {};
-    items.forEach(r=>{ const s = classifyStage(r); counts[s] = (counts[s]||0)+1; });
-    const rech = items.filter(r=>r.estatus==='Rechazado');
-    const rechNipSi = rech.filter(r=>r.nip==='SI').length;
-    const rechBuroSi = rech.filter(r=>r.buro==='SI').length;
-    const pct = (n)=> total ? Math.round((n/total)*1000)/10 : null;
-    return {
-      canal: canalName, total,
-      lead_n: counts['Lead']||0, lead_pct: pct(counts['Lead']||0),
-      onboarded_sin_calificar_n: counts['Onboarded sin calificar']||0, onboarded_sin_calificar_pct: pct(counts['Onboarded sin calificar']||0),
-      mql_n: counts['MQL']||0, mql_pct: pct(counts['MQL']||0),
-      sql_n: counts['SQL']||0, sql_pct: pct(counts['SQL']||0),
-      customer_n: counts['Customer']||0, customer_pct: pct(counts['Customer']||0),
-      rechazado_n: counts['Rechazado']||0, rechazado_pct: pct(counts['Rechazado']||0),
-      rechazado_nip_si_n: rechNipSi, rechazado_nip_si_pct: rech.length ? Math.round((rechNipSi/rech.length)*1000)/10 : null,
-      rechazado_buro_si_n: rechBuroSi, rechazado_buro_si_pct: rech.length ? Math.round((rechBuroSi/rech.length)*1000)/10 : null,
-    };
-  }
   const stageFunnel = ['Meta','Google'].map(canal=> buildStageStats(recs.filter(r=>r.platform===canal), canal));
   const stageRecords = recs.map(r=>({platform:r.platform, month:r.month, week:r.week, week_start:r.week_start, stage:classifyStage(r)}));
   const sinFuenteStage = (ADV_STATIC.stage_funnel||[]).find(r=>r.canal==='Sin fuente asignada');
@@ -936,7 +958,7 @@ function processLiveCrm(rows){
   };
 }
 
-function setLiveBadge(state, crmState){
+function setLiveBadge(state, crmState, sinUtmState){
   const el = document.getElementById('liveStatusBadge');
   if(!el) return;
   const stamp = new Date().toLocaleString('es-MX', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
@@ -947,11 +969,12 @@ function setLiveBadge(state, crmState){
   }
   const parts = [];
   parts.push(state ? 'Meta + Google Ads' : null);
-  parts.push(crmState ? 'CRM (Base Leads con UTM)' : null);
+  parts.push(crmState ? 'CRM con UTM' : null);
+  parts.push(sinUtmState ? 'CRM sin UTM' : null);
   const okParts = parts.filter(Boolean);
-  if(state && crmState){
+  if(state && crmState && sinUtmState){
     el.className = 'live-badge live-ok';
-    el.innerHTML = `🟢 Datos en vivo desde Google Sheets (Meta + Google Ads + CRM) — cargado ${stamp}`;
+    el.innerHTML = `🟢 Datos en vivo desde Google Sheets (Meta + Google Ads + CRM con y sin UTM) — cargado ${stamp}`;
   } else if(okParts.length){
     el.className = 'live-badge live-ok';
     el.innerHTML = `🟡 Parcialmente en vivo (${okParts.join(', ')}) — el resto usa el último corte guardado. Cargado ${stamp}`;
@@ -962,7 +985,7 @@ function setLiveBadge(state, crmState){
 }
 
 async function loadLiveData(){
-  const [metaGoogleResult, crmResult] = await Promise.allSettled([
+  const [metaGoogleResult, crmResult, sinUtmResult] = await Promise.allSettled([
     (async()=>{
       const [metaRows, googleRows] = await Promise.all([fetchGviz(GVIZ_META_URL), fetchGviz(GVIZ_GOOGLE_URL)]);
       return { metaProcessed: processLiveMeta(metaRows), googleProcessed: processLiveGoogle(googleRows) };
@@ -971,9 +994,13 @@ async function loadLiveData(){
       const crmRows = await fetchGviz(GVIZ_CRM_URL);
       return processLiveCrm(crmRows);
     })(),
+    (async()=>{
+      const sinUtmRows = await fetchGviz(GVIZ_SIN_UTM_URL);
+      return processLiveSinUtm(sinUtmRows);
+    })(),
   ]);
 
-  let metaOk = false, crmOk = false;
+  let metaOk = false, crmOk = false, sinUtmOk = false;
 
   if(metaGoogleResult.status==='fulfilled'){
     const { metaProcessed, googleProcessed } = metaGoogleResult.value;
@@ -1010,8 +1037,23 @@ async function loadLiveData(){
     buildCrmLookupsFromStatic();
   }
 
+  if(sinUtmResult.status==='fulfilled'){
+    const su = sinUtmResult.value;
+    // reemplaza la entrada "Sin fuente asignada" (estática) con la versión en vivo
+    ADV.funnel_by_canal = (ADV.funnel_by_canal||[]).filter(r=>r.canal!=='Sin fuente asignada').concat([su.stats]);
+    ADV.stage_funnel = (ADV.stage_funnel||[]).filter(r=>r.canal!=='Sin fuente asignada').concat([su.stats]);
+    ADV.stage_records = (ADV.stage_records||[]).filter(r=>r.platform!=='Sin fuente asignada').concat(su.stageRecords);
+    if(ADV.arrendamiento_summary){
+      ADV.arrendamiento_summary.organico_count = su.customerCutoff;
+      ADV.arrendamiento_summary.organico_count_alltime = su.customerAlltime;
+    }
+    sinUtmOk = true;
+  } else {
+    console.warn('No se pudo cargar CRM sin UTM en vivo, se usa el corte estático.', sinUtmResult.reason);
+  }
+
   rebuildComparisonAndLast8();
-  setLiveBadge(metaOk, crmOk);
+  setLiveBadge(metaOk, crmOk, sinUtmOk);
   renderAll();
 }
 
