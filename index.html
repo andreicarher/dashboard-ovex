@@ -175,6 +175,15 @@ tr:hover td{ background:rgba(255,255,255,.02); }
       <div class="chart-container"><canvas id="chartMetaBreakdownResults"></canvas></div>
     </div>
     <p class="text-muted" style="font-size:.8rem; margin-top:1rem;">Se excluyen campañas de marca/alcance (ALCANCE, TRÁFICO, LIKES FB, TRÁFICO IG) de esta vista — solo WEBFORMS y MENSAJES.</p>
+
+    <div class="section-title"><span class="dot crm"></span> Registros y pipeline por campaña</div>
+    <div class="card">
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">
+        "Sin clasificar" son registros del CRM cuyo campo Campaña no se pudo emparejar con ninguna campaña conocida (tracking roto o IDs sin resolver).
+      </p>
+      <div class="table-scroll" id="campaignPipelineTableWrap"></div>
+    </div>
+    <div id="campaignInsights"></div>
   </div>
 
   <!-- ============ TAB: GOOGLE ADS ============ -->
@@ -246,20 +255,31 @@ tr:hover td{ background:rgba(255,255,255,.02); }
       Estos análisis se conectan en vivo a <code>Base Leads con UTM</code> (leads pagados, Meta + Google, desde feb 2026) en el mismo Google Sheet — se recalculan solos cada vez que hay conexión. Si no hay conexión, se usa el último corte guardado.
     </p>
 
-    <div class="section-title"><span class="dot crm"></span> Funnel de aprobación completo, por canal</div>
+    <div class="section-title"><span class="dot crm"></span> Funnel Lead → MQL → SQL → Customer, por canal</div>
     <div class="card">
-      <p class="text-muted" style="font-size:.82rem; margin-bottom:.6rem;">CIEC verificada → NIP verificado → Paramétrico aprobado → Buró aprobado. Cada barra muestra el % de leads de ese canal con "SI" en ese campo, calculado <strong>solo sobre los registros donde ese campo ya tiene un valor capturado</strong> (no está vacío) — por eso no es un embudo de una sola base que se reduce paso a paso, cada barra tiene su propio denominador.</p>
-      <div class="chart-container"><canvas id="chartFunnelCanal"></canvas></div>
-      <div class="chart-legend-note" style="color:var(--color-text-muted); border-top-color:rgba(255,255,255,.1);">
-        ⚠️ <strong>Una barra ausente no siempre significa lo mismo:</strong> puede ser un 0% real (el campo tiene valor pero nadie pasó, ej. Google en CIEC) o significar que <strong>todavía no hay ningún caso evaluado</strong> en ese canal (ej. Google en Paramétrico, donde los 52 leads siguen sin valor). Además, los tamaños de muestra detrás de Paramétrico y Buró suelen ser muy chicos (a veces menos de 30 casos) — un solo caso puede mover el % varios puntos; interpreta estas dos etapas con más cautela que CIEC/NIP.
-      </div>
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:.6rem;">
+        <strong>Lead</strong>: entró a la web (Onboarding). <strong>MQL</strong>: llegó a Onboarded con NIP verificado. <strong>SQL</strong>: llegó a Onboarded con NIP + Buró + Paramétrico, los tres. <strong>Customer</strong>: firmó arrendamiento (Con arrendamiento = SI), sin importar el estatus. <strong>Onboarded sin calificar</strong>: llegó a Onboarded pero NIP todavía no está en SI — no cuenta ni como MQL ni SQL.
+      </p>
+      <div class="chart-container tall"><canvas id="chartStageFunnel"></canvas></div>
     </div>
 
-    <div class="section-title"><span class="dot"></span> Costo por arrendamiento firmado</div>
+    <div class="card" style="margin-top:1.5rem;">
+      <div id="stageFunnelTableWrap"></div>
+    </div>
+
+    <div class="section-title"><span class="dot"></span> Rechazados</div>
+    <div class="card">
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">
+        Quedan fuera del embudo Lead→MQL→SQL→Customer, pero vale la pena ver qué tan calificados estaban antes del rechazo — por eso se desglosan aparte con NIP y Buró.
+      </p>
+      <div id="rechazadosTableWrap"></div>
+    </div>
+
+    <div class="section-title"><span class="dot"></span> Costo por Customer (arrendamiento firmado)</div>
     <div class="card">
       <div class="alert warning">
-        <div class="alert-title">⚠️ Todavía no hay arrendamientos firmados desde paid media</div>
-        <p>De <span id="arrLeadsTotal"></span> leads atribuidos a Meta + Google Ads por UTM, <strong>0 han firmado arrendamiento</strong> hasta el corte del CRM. Para contexto: los registros <strong>sin fuente asignada</strong> sí tienen <strong><span id="arrOrganicoTotal"></span> arrendamientos firmados</strong> en el mismo período (<span id="arrOrganicoAlltime"></span> en todo el histórico). Ojo: "sin fuente asignada" no es necesariamente tráfico orgánico puro — las campañas de WhatsApp (MENSAJES) tampoco registran Fuente/Medio, así que este grupo puede incluir leads de esos esfuerzos pagados junto con el orgánico real; hoy no hay forma de separarlos con los datos disponibles. Esta métrica de arrendamiento queda lista para calcularse automáticamente en cuanto el primer lead pagado con UTM firme — por ahora es la alerta más importante de esta vista.</p>
+        <div class="alert-title">⚠️ Todavía no hay Customers desde paid media</div>
+        <p>De <span id="arrLeadsTotal"></span> leads atribuidos a Meta + Google Ads por UTM, <strong>0 son Customer</strong> (ningún arrendamiento firmado) hasta el corte del CRM. Para contexto: los registros <strong>sin fuente asignada</strong> sí tienen <strong><span id="arrOrganicoTotal"></span> Customers</strong> en el mismo período (<span id="arrOrganicoAlltime"></span> en todo el histórico). Ojo: "sin fuente asignada" no es necesariamente tráfico orgánico puro — las campañas de WhatsApp (MENSAJES) tampoco registran Fuente/Medio, así que este grupo puede incluir leads de esos esfuerzos pagados junto con el orgánico real; hoy no hay forma de separarlos con los datos disponibles. Esta métrica queda lista para calcularse automáticamente en cuanto el primer lead pagado con UTM firme — por ahora es la alerta más importante de esta vista.</p>
       </div>
     </div>
 
@@ -350,7 +370,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 </script>
 
 <script id="advanced-data" type="application/json">
-{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}], "pipeline_by_week": [{"week": "2026-W15", "week_start": "2026-04-06", "month": "2026-04", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0}, {"week": "2026-W16", "week_start": "2026-04-13", "month": "2026-04", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0}, {"week": "2026-W17", "week_start": "2026-04-20", "month": "2026-04", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1}, {"week": "2026-W18", "week_start": "2026-04-27", "month": "2026-04", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5}, {"week": "2026-W19", "week_start": "2026-05-04", "month": "2026-05", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7}, {"week": "2026-W20", "week_start": "2026-05-11", "month": "2026-05", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3}, {"week": "2026-W21", "week_start": "2026-05-18", "month": "2026-05", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9}, {"week": "2026-W22", "week_start": "2026-05-25", "month": "2026-05", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0}, {"week": "2026-W23", "week_start": "2026-06-01", "month": "2026-06", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0}, {"week": "2026-W24", "week_start": "2026-06-08", "month": "2026-06", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0}, {"week": "2026-W25", "week_start": "2026-06-15", "month": "2026-06", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2}, {"week": "2026-W26", "week_start": "2026-06-22", "month": "2026-06", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0}, {"week": "2026-W27", "week_start": "2026-06-29", "month": "2026-06", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0}, {"week": "2026-W28", "week_start": "2026-07-06", "month": "2026-07", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7}, {"week": "2026-W29", "week_start": "2026-07-13", "month": "2026-07", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8}, {"week": "2026-W30", "week_start": "2026-07-20", "month": "2026-07", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6}], "weekly_quality": [{"week": "2026-W15", "week_start": "2026-04-06", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"week": "2026-W16", "week_start": "2026-04-13", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0, "ciec_si_pct": 4.0, "nip_si_pct": 20.0, "buro_si_pct": 22.2}, {"week": "2026-W17", "week_start": "2026-04-20", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1, "ciec_si_pct": 0.0, "nip_si_pct": 17.0, "buro_si_pct": 11.1}, {"week": "2026-W18", "week_start": "2026-04-27", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5, "ciec_si_pct": 3.7, "nip_si_pct": 33.3, "buro_si_pct": 11.8}, {"week": "2026-W19", "week_start": "2026-05-04", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7, "ciec_si_pct": 0.0, "nip_si_pct": 23.7, "buro_si_pct": 0.0}, {"week": "2026-W20", "week_start": "2026-05-11", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3, "ciec_si_pct": 5.6, "nip_si_pct": 33.3, "buro_si_pct": 16.7}, {"week": "2026-W21", "week_start": "2026-05-18", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9, "ciec_si_pct": 3.9, "nip_si_pct": 36.2, "buro_si_pct": 4.7}, {"week": "2026-W22", "week_start": "2026-05-25", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0, "ciec_si_pct": 1.2, "nip_si_pct": 50.0, "buro_si_pct": 7.5}, {"week": "2026-W23", "week_start": "2026-06-01", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0, "ciec_si_pct": 4.9, "nip_si_pct": 52.9, "buro_si_pct": 11.3}, {"week": "2026-W24", "week_start": "2026-06-08", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0, "ciec_si_pct": 1.2, "nip_si_pct": 40.2, "buro_si_pct": 3.0}, {"week": "2026-W25", "week_start": "2026-06-15", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2, "ciec_si_pct": 2.8, "nip_si_pct": 39.4, "buro_si_pct": 14.3}, {"week": "2026-W26", "week_start": "2026-06-22", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0, "ciec_si_pct": 2.0, "nip_si_pct": 48.0, "buro_si_pct": 16.7}, {"week": "2026-W27", "week_start": "2026-06-29", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0, "ciec_si_pct": 0.0, "nip_si_pct": 21.4, "buro_si_pct": 11.1}, {"week": "2026-W28", "week_start": "2026-07-06", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7, "ciec_si_pct": 2.7, "nip_si_pct": 33.8, "buro_si_pct": 8.7}, {"week": "2026-W29", "week_start": "2026-07-13", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8, "ciec_si_pct": 0.8, "nip_si_pct": 48.3, "buro_si_pct": 7.7}, {"week": "2026-W30", "week_start": "2026-07-20", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6, "ciec_si_pct": 2.3, "nip_si_pct": 40.9, "buro_si_pct": 5.9}], "keyword_detail": [{"keyword": "alquiler de carros", "total": 4, "Onboarding": 3, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 75.0, "onboarded_pct": 0.0, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "nip_si_pct": 25.0, "buro_si_pct": 0.0}, {"keyword": "leasing autos", "total": 4, "Onboarding": 2, "Onboarded": 0, "Rechazado": 2, "onboarding_pct": 50.0, "onboarded_pct": 0.0, "rechazado_pct": 50.0, "ciec_si_pct": 0.0, "nip_si_pct": 50.0, "buro_si_pct": 0.0}, {"keyword": "autos en renta", "total": 4, "Onboarding": 3, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 75.0, "onboarded_pct": 0.0, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "nip_si_pct": 25.0, "buro_si_pct": 0.0}, {"keyword": "leasing carros", "total": 4, "Onboarding": 3, "Onboarded": 1, "Rechazado": 0, "onboarding_pct": 75.0, "onboarded_pct": 25.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 25.0, "buro_si_pct": 100.0}, {"keyword": "renta autos", "total": 3, "Onboarding": 2, "Onboarded": 1, "Rechazado": 0, "onboarding_pct": 66.7, "onboarded_pct": 33.3, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 33.3, "buro_si_pct": 100.0}, {"keyword": "renta de autos", "total": 3, "Onboarding": 1, "Onboarded": 0, "Rechazado": 2, "onboarding_pct": 33.3, "onboarded_pct": 0.0, "rechazado_pct": 66.7, "ciec_si_pct": 0.0, "nip_si_pct": 66.7, "buro_si_pct": 0.0}, {"keyword": "arrendamiento de autos", "total": 3, "Onboarding": 2, "Onboarded": 1, "Rechazado": 0, "onboarding_pct": 66.7, "onboarded_pct": 33.3, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 33.3, "buro_si_pct": null}, {"keyword": "leasing de coches", "total": 2, "Onboarding": 1, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 50.0, "onboarded_pct": 0.0, "rechazado_pct": 50.0, "ciec_si_pct": 0.0, "nip_si_pct": 50.0, "buro_si_pct": 0.0}, {"keyword": "arrendamiento de coches", "total": 1, "Onboarding": 1, "Onboarded": 0, "Rechazado": 0, "onboarding_pct": 100.0, "onboarded_pct": 0.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"keyword": "autos de renta", "total": 1, "Onboarding": 1, "Onboarded": 0, "Rechazado": 0, "onboarding_pct": 100.0, "onboarded_pct": 0.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"keyword": "rent de carros", "total": 1, "Onboarding": 1, "Onboarded": 0, "Rechazado": 0, "onboarding_pct": 100.0, "onboarded_pct": 0.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"keyword": "renta de carros por mes", "total": 1, "Onboarding": 0, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 0.0, "onboarded_pct": 0.0, "rechazado_pct": 100.0, "ciec_si_pct": 0.0, "nip_si_pct": 100.0, "buro_si_pct": 0.0}], "keyword_groups": [{"group": "Renta / Alquiler", "total": 17, "Onboarding": 11, "Onboarded": 1, "Rechazado": 5, "onboarding_pct": 64.7, "onboarded_pct": 5.9, "rechazado_pct": 29.4, "ciec_si_pct": 0.0, "nip_si_pct": 35.3, "buro_si_pct": 16.7}, {"group": "Leasing / Arrendamiento", "total": 14, "Onboarding": 9, "Onboarded": 2, "Rechazado": 3, "onboarding_pct": 64.3, "onboarded_pct": 14.3, "rechazado_pct": 21.4, "ciec_si_pct": 0.0, "nip_si_pct": 35.7, "buro_si_pct": 25.0}], "kw_coverage": {"withKeyword": 31, "total": 84}}
+{"funnel_by_canal": [{"canal": "Google", "total": 52, "ciec_si_pct": 0.0, "ciec_si_n": 0, "nip_si_pct": 32.7, "nip_si_n": 17, "parametrico_si_pct": null, "parametrico_si_n": 0, "buro_si_pct": 13.3, "buro_si_n": 2, "arrendamiento_si_n": 0}, {"canal": "Meta", "total": 1055, "ciec_si_pct": 2.5, "ciec_si_n": 26, "nip_si_pct": 37.7, "nip_si_n": 398, "parametrico_si_pct": 16.0, "parametrico_si_n": 4, "buro_si_pct": 8.9, "buro_si_n": 34, "arrendamiento_si_n": 0}, {"canal": "Sin fuente asignada", "total": 2639, "ciec_si_pct": 2.5, "ciec_si_n": null, "nip_si_pct": 35.1, "nip_si_n": null, "parametrico_si_pct": 38.2, "parametrico_si_n": null, "buro_si_pct": 15.0, "buro_si_n": null, "arrendamiento_si_n": 10}], "arrendamiento_summary": {"meta_count": 0, "google_count": 0, "organico_count": 10, "organico_count_alltime": 20}, "lag_buckets": [{"bucket": "Registro previo al clic (atípico)", "count": 356}, {"bucket": "Mismo día", "count": 620}, {"bucket": "1 día", "count": 19}, {"bucket": "2-3 días", "count": 17}, {"bucket": "4-7 días", "count": 18}, {"bucket": "8+ días", "count": 77}], "lag_stats": {"n_valid": 751, "n_excluded": 356, "mean_days": 2.97, "median_days": 0.0}, "buro_audit": [{"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin", "total_rechazado": 272, "rechazado_buro_si": 13, "pct": 4.8}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web MX_MF_24 50_FBIG_INT_General Rockin_", "total_rechazado": 20, "rechazado_buro_si": 2, "pct": 10.0}, {"Campana_norm": "RO_MX_SAL_PRO_Sitio Web", "total_rechazado": 5, "rechazado_buro_si": 2, "pct": 40.0}, {"Campana_norm": "RO_MX_SAL_RTG_Registros MX_MF_24 50_FBIG_BRO_Visitas web catálogo_", "total_rechazado": 1, "rechazado_buro_si": 1, "pct": 100.0}, {"Campana_norm": "120239835078170423", "total_rechazado": 28, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_Empresarios Web", "total_rechazado": 40, "rechazado_buro_si": 0, "pct": 0.0}, {"Campana_norm": "search_registros", "total_rechazado": 13, "rechazado_buro_si": 0, "pct": 0.0}], "contenido_ranking": [{"contenido": "PRO_VID_WAP_1080x1080_Vehículo Empresarial", "registros": 24, "onboarded_pct": 8.3, "rechazado_pct": 37.5, "ciec_si_pct": 0.0, "buro_si_pct": 0.0}, {"contenido": "PRO_VID_WEB_1080x1920_Catálogo Empresarios", "registros": 72, "onboarded_pct": 8.3, "rechazado_pct": 36.1, "ciec_si_pct": 2.8, "buro_si_pct": 10.3}, {"contenido": "Ciudades", "registros": 51, "onboarded_pct": 7.8, "rechazado_pct": 25.5, "ciec_si_pct": 0.0, "buro_si_pct": 13.3}, {"contenido": "PRO_VID_WEB_1080x1920_CatálogoV2", "registros": 14, "onboarded_pct": 7.1, "rechazado_pct": 35.7, "ciec_si_pct": 7.1, "buro_si_pct": 16.7}, {"contenido": "PRO_IMG_WEB_1080x1080_Reglaspropias", "registros": 88, "onboarded_pct": 4.5, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "buro_si_pct": 4.3}, {"contenido": "PRO_VID_WEB_1080x1920_Paquetekmilimitados", "registros": 79, "onboarded_pct": 3.8, "rechazado_pct": 41.8, "ciec_si_pct": 1.3, "buro_si_pct": 3.0}, {"contenido": "PRO_CAR_WEB_1080x1080_CATALOGO", "registros": 419, "onboarded_pct": 3.1, "rechazado_pct": 41.5, "ciec_si_pct": 3.1, "buro_si_pct": 10.3}, {"contenido": "PRO_VID_WEB_1080x1080_Carruselanuncio", "registros": 117, "onboarded_pct": 1.7, "rechazado_pct": 20.5, "ciec_si_pct": 3.4, "buro_si_pct": 20.0}, {"contenido": "PRO_VID_WEB_1080x1920_¿Qué es OVEX?", "registros": 143, "onboarded_pct": 0.0, "rechazado_pct": 30.1, "ciec_si_pct": 2.8, "buro_si_pct": 7.0}], "pipeline_by_month": [{"month": "2026-04", "total": 141, "onboarding_n": 112, "onboarding_pct": 79.4, "onboarded_n": 2, "onboarded_pct": 1.4, "rechazado_n": 27, "rechazado_pct": 19.1}, {"month": "2026-05", "total": 381, "onboarding_n": 244, "onboarding_pct": 64.0, "onboarded_n": 10, "onboarded_pct": 2.6, "rechazado_n": 127, "rechazado_pct": 33.3}, {"month": "2026-06", "total": 315, "onboarding_n": 174, "onboarding_pct": 55.2, "onboarded_n": 10, "onboarded_pct": 3.2, "rechazado_n": 131, "rechazado_pct": 41.6}, {"month": "2026-07", "total": 270, "onboarding_n": 162, "onboarding_pct": 60.0, "onboarded_n": 14, "onboarded_pct": 5.2, "rechazado_n": 94, "rechazado_pct": 34.8}], "pipeline_by_week": [{"week": "2026-W15", "week_start": "2026-04-06", "month": "2026-04", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0}, {"week": "2026-W16", "week_start": "2026-04-13", "month": "2026-04", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0}, {"week": "2026-W17", "week_start": "2026-04-20", "month": "2026-04", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1}, {"week": "2026-W18", "week_start": "2026-04-27", "month": "2026-04", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5}, {"week": "2026-W19", "week_start": "2026-05-04", "month": "2026-05", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7}, {"week": "2026-W20", "week_start": "2026-05-11", "month": "2026-05", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3}, {"week": "2026-W21", "week_start": "2026-05-18", "month": "2026-05", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9}, {"week": "2026-W22", "week_start": "2026-05-25", "month": "2026-05", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0}, {"week": "2026-W23", "week_start": "2026-06-01", "month": "2026-06", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0}, {"week": "2026-W24", "week_start": "2026-06-08", "month": "2026-06", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0}, {"week": "2026-W25", "week_start": "2026-06-15", "month": "2026-06", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2}, {"week": "2026-W26", "week_start": "2026-06-22", "month": "2026-06", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0}, {"week": "2026-W27", "week_start": "2026-06-29", "month": "2026-06", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0}, {"week": "2026-W28", "week_start": "2026-07-06", "month": "2026-07", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7}, {"week": "2026-W29", "week_start": "2026-07-13", "month": "2026-07", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8}, {"week": "2026-W30", "week_start": "2026-07-20", "month": "2026-07", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6}], "weekly_quality": [{"week": "2026-W15", "week_start": "2026-04-06", "total": 5, "onboarding_n": 5, "onboarding_pct": 100.0, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"week": "2026-W16", "week_start": "2026-04-13", "total": 50, "onboarding_n": 40, "onboarding_pct": 80.0, "onboarded_n": 1, "onboarded_pct": 2.0, "rechazado_n": 9, "rechazado_pct": 18.0, "ciec_si_pct": 4.0, "nip_si_pct": 20.0, "buro_si_pct": 22.2}, {"week": "2026-W17", "week_start": "2026-04-20", "total": 53, "onboarding_n": 44, "onboarding_pct": 83.0, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 8, "rechazado_pct": 15.1, "ciec_si_pct": 0.0, "nip_si_pct": 17.0, "buro_si_pct": 11.1}, {"week": "2026-W18", "week_start": "2026-04-27", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 1, "onboarded_pct": 1.9, "rechazado_n": 17, "rechazado_pct": 31.5, "ciec_si_pct": 3.7, "nip_si_pct": 33.3, "buro_si_pct": 11.8}, {"week": "2026-W19", "week_start": "2026-05-04", "total": 93, "onboarding_n": 71, "onboarding_pct": 76.3, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 22, "rechazado_pct": 23.7, "ciec_si_pct": 0.0, "nip_si_pct": 23.7, "buro_si_pct": 0.0}, {"week": "2026-W20", "week_start": "2026-05-11", "total": 54, "onboarding_n": 36, "onboarding_pct": 66.7, "onboarded_n": 0, "onboarded_pct": 0.0, "rechazado_n": 18, "rechazado_pct": 33.3, "ciec_si_pct": 5.6, "nip_si_pct": 33.3, "buro_si_pct": 16.7}, {"week": "2026-W21", "week_start": "2026-05-18", "total": 127, "onboarding_n": 81, "onboarding_pct": 63.8, "onboarded_n": 3, "onboarded_pct": 2.4, "rechazado_n": 43, "rechazado_pct": 33.9, "ciec_si_pct": 3.9, "nip_si_pct": 36.2, "buro_si_pct": 4.7}, {"week": "2026-W22", "week_start": "2026-05-25", "total": 86, "onboarding_n": 43, "onboarding_pct": 50.0, "onboarded_n": 6, "onboarded_pct": 7.0, "rechazado_n": 37, "rechazado_pct": 43.0, "ciec_si_pct": 1.2, "nip_si_pct": 50.0, "buro_si_pct": 7.5}, {"week": "2026-W23", "week_start": "2026-06-01", "total": 102, "onboarding_n": 48, "onboarding_pct": 47.1, "onboarded_n": 3, "onboarded_pct": 2.9, "rechazado_n": 51, "rechazado_pct": 50.0, "ciec_si_pct": 4.9, "nip_si_pct": 52.9, "buro_si_pct": 11.3}, {"week": "2026-W24", "week_start": "2026-06-08", "total": 82, "onboarding_n": 49, "onboarding_pct": 59.8, "onboarded_n": 1, "onboarded_pct": 1.2, "rechazado_n": 32, "rechazado_pct": 39.0, "ciec_si_pct": 1.2, "nip_si_pct": 40.2, "buro_si_pct": 3.0}, {"week": "2026-W25", "week_start": "2026-06-15", "total": 71, "onboarding_n": 43, "onboarding_pct": 60.6, "onboarded_n": 3, "onboarded_pct": 4.2, "rechazado_n": 25, "rechazado_pct": 35.2, "ciec_si_pct": 2.8, "nip_si_pct": 39.4, "buro_si_pct": 14.3}, {"week": "2026-W26", "week_start": "2026-06-22", "total": 50, "onboarding_n": 26, "onboarding_pct": 52.0, "onboarded_n": 3, "onboarded_pct": 6.0, "rechazado_n": 21, "rechazado_pct": 42.0, "ciec_si_pct": 2.0, "nip_si_pct": 48.0, "buro_si_pct": 16.7}, {"week": "2026-W27", "week_start": "2026-06-29", "total": 42, "onboarding_n": 33, "onboarding_pct": 78.6, "onboarded_n": 1, "onboarded_pct": 2.4, "rechazado_n": 8, "rechazado_pct": 19.0, "ciec_si_pct": 0.0, "nip_si_pct": 21.4, "buro_si_pct": 11.1}, {"week": "2026-W28", "week_start": "2026-07-06", "total": 74, "onboarding_n": 49, "onboarding_pct": 66.2, "onboarded_n": 3, "onboarded_pct": 4.1, "rechazado_n": 22, "rechazado_pct": 29.7, "ciec_si_pct": 2.7, "nip_si_pct": 33.8, "buro_si_pct": 8.7}, {"week": "2026-W29", "week_start": "2026-07-13", "total": 120, "onboarding_n": 62, "onboarding_pct": 51.7, "onboarded_n": 9, "onboarded_pct": 7.5, "rechazado_n": 49, "rechazado_pct": 40.8, "ciec_si_pct": 0.8, "nip_si_pct": 48.3, "buro_si_pct": 7.7}, {"week": "2026-W30", "week_start": "2026-07-20", "total": 44, "onboarding_n": 26, "onboarding_pct": 59.1, "onboarded_n": 1, "onboarded_pct": 2.3, "rechazado_n": 17, "rechazado_pct": 38.6, "ciec_si_pct": 2.3, "nip_si_pct": 40.9, "buro_si_pct": 5.9}], "keyword_detail": [{"keyword": "alquiler de carros", "total": 4, "Onboarding": 3, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 75.0, "onboarded_pct": 0.0, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "nip_si_pct": 25.0, "buro_si_pct": 0.0}, {"keyword": "leasing autos", "total": 4, "Onboarding": 2, "Onboarded": 0, "Rechazado": 2, "onboarding_pct": 50.0, "onboarded_pct": 0.0, "rechazado_pct": 50.0, "ciec_si_pct": 0.0, "nip_si_pct": 50.0, "buro_si_pct": 0.0}, {"keyword": "autos en renta", "total": 4, "Onboarding": 3, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 75.0, "onboarded_pct": 0.0, "rechazado_pct": 25.0, "ciec_si_pct": 0.0, "nip_si_pct": 25.0, "buro_si_pct": 0.0}, {"keyword": "leasing carros", "total": 4, "Onboarding": 3, "Onboarded": 1, "Rechazado": 0, "onboarding_pct": 75.0, "onboarded_pct": 25.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 25.0, "buro_si_pct": 100.0}, {"keyword": "renta autos", "total": 3, "Onboarding": 2, "Onboarded": 1, "Rechazado": 0, "onboarding_pct": 66.7, "onboarded_pct": 33.3, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 33.3, "buro_si_pct": 100.0}, {"keyword": "renta de autos", "total": 3, "Onboarding": 1, "Onboarded": 0, "Rechazado": 2, "onboarding_pct": 33.3, "onboarded_pct": 0.0, "rechazado_pct": 66.7, "ciec_si_pct": 0.0, "nip_si_pct": 66.7, "buro_si_pct": 0.0}, {"keyword": "arrendamiento de autos", "total": 3, "Onboarding": 2, "Onboarded": 1, "Rechazado": 0, "onboarding_pct": 66.7, "onboarded_pct": 33.3, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 33.3, "buro_si_pct": null}, {"keyword": "leasing de coches", "total": 2, "Onboarding": 1, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 50.0, "onboarded_pct": 0.0, "rechazado_pct": 50.0, "ciec_si_pct": 0.0, "nip_si_pct": 50.0, "buro_si_pct": 0.0}, {"keyword": "arrendamiento de coches", "total": 1, "Onboarding": 1, "Onboarded": 0, "Rechazado": 0, "onboarding_pct": 100.0, "onboarded_pct": 0.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"keyword": "autos de renta", "total": 1, "Onboarding": 1, "Onboarded": 0, "Rechazado": 0, "onboarding_pct": 100.0, "onboarded_pct": 0.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"keyword": "rent de carros", "total": 1, "Onboarding": 1, "Onboarded": 0, "Rechazado": 0, "onboarding_pct": 100.0, "onboarded_pct": 0.0, "rechazado_pct": 0.0, "ciec_si_pct": 0.0, "nip_si_pct": 0.0, "buro_si_pct": null}, {"keyword": "renta de carros por mes", "total": 1, "Onboarding": 0, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 0.0, "onboarded_pct": 0.0, "rechazado_pct": 100.0, "ciec_si_pct": 0.0, "nip_si_pct": 100.0, "buro_si_pct": 0.0}], "keyword_groups": [{"group": "Renta / Alquiler", "total": 17, "Onboarding": 11, "Onboarded": 1, "Rechazado": 5, "onboarding_pct": 64.7, "onboarded_pct": 5.9, "rechazado_pct": 29.4, "ciec_si_pct": 0.0, "nip_si_pct": 35.3, "buro_si_pct": 16.7}, {"group": "Leasing / Arrendamiento", "total": 14, "Onboarding": 9, "Onboarded": 2, "Rechazado": 3, "onboarding_pct": 64.3, "onboarded_pct": 14.3, "rechazado_pct": 21.4, "ciec_si_pct": 0.0, "nip_si_pct": 35.7, "buro_si_pct": 25.0}], "kw_coverage": {"withKeyword": 31, "total": 84}, "campaign_pipeline": [{"campaign": "RO_MX_SAL_PRO_AplicacionesWeb", "total": 844, "Onboarding": 503, "Onboarded": 29, "Rechazado": 312, "onboarding_pct": 59.6, "onboarded_pct": 3.4, "rechazado_pct": 37.0, "ciec_si_pct": 2.5, "nip_si_pct": 40.4, "buro_si_pct": 8.6, "costKey": "WEBFORMS|CONVERSION"}, {"campaign": "Sin clasificar (tracking roto)", "total": 203, "Onboarding": 147, "Onboarded": 3, "Rechazado": 53, "onboarding_pct": 72.4, "onboarded_pct": 1.5, "rechazado_pct": 26.1, "ciec_si_pct": 2.0, "nip_si_pct": 27.6, "buro_si_pct": 9.3, "costKey": null}, {"campaign": "RO_MX_SAL_RTG_Registros", "total": 8, "Onboarding": 7, "Onboarded": 0, "Rechazado": 1, "onboarding_pct": 87.5, "onboarded_pct": 0.0, "rechazado_pct": 12.5, "ciec_si_pct": 12.5, "nip_si_pct": 12.5, "buro_si_pct": 100.0, "costKey": "WEBFORMS|RETARGETING"}], "stage_funnel": [{"canal": "Google", "total": 52, "lead_n": 35, "onboarded_sin_calificar_n": 0, "mql_n": 4, "sql_n": 0, "customer_n": 0, "rechazado_n": 13, "rechazado_nip_si_n": 13, "rechazado_buro_si_n": 0, "lead_pct": 67.3, "onboarded_sin_calificar_pct": 0.0, "mql_pct": 7.7, "sql_pct": 0.0, "customer_pct": 0.0, "rechazado_pct": 25.0, "rechazado_nip_si_pct": 100.0, "rechazado_buro_si_pct": 0.0}, {"canal": "Meta", "total": 1055, "lead_n": 657, "onboarded_sin_calificar_n": 0, "mql_n": 28, "sql_n": 4, "customer_n": 0, "rechazado_n": 366, "rechazado_nip_si_n": 366, "rechazado_buro_si_n": 18, "lead_pct": 62.3, "onboarded_sin_calificar_pct": 0.0, "mql_pct": 2.7, "sql_pct": 0.4, "customer_pct": 0.0, "rechazado_pct": 34.7, "rechazado_nip_si_pct": 100.0, "rechazado_buro_si_pct": 4.9}, {"canal": "Sin fuente asignada", "total": 2639, "lead_n": 1711, "onboarded_sin_calificar_n": 0, "mql_n": 121, "sql_n": 16, "customer_n": 10, "rechazado_n": 781, "rechazado_nip_si_n": 780, "rechazado_buro_si_n": 33, "lead_pct": 64.8, "onboarded_sin_calificar_pct": 0.0, "mql_pct": 4.6, "sql_pct": 0.6, "customer_pct": 0.4, "rechazado_pct": 29.6, "rechazado_nip_si_pct": 99.9, "rechazado_buro_si_pct": 4.2}]}
 </script>
 
 <script>
@@ -692,6 +712,39 @@ function processLiveCrm(rows){
   }).sort((a,b)=> b.total - a.total);
 
 
+  // Pipeline por campaña (Meta) — mapeo canónico porque el campo Campaña del CRM viene sucio
+  function canonicalMetaCampaign(rawCampaign){
+    const s = String(rawCampaign||'').trim();
+    if(s.startsWith('RO_MX_LEA_PRO_WA')) return 'RO_MX_LEA_PRO_WA / Campaña Mensajes OVEX';
+    if(s.toLowerCase().includes('mensajes')) return 'RO_MX_LEA_PRO_WA / Campaña Mensajes OVEX';
+    if(s.startsWith('RO_MX_SAL_PRO_AplicacionesWeb')) return 'RO_MX_SAL_PRO_AplicacionesWeb';
+    if(s.startsWith('RO_MX_SAL_RTG_Registros')) return 'RO_MX_SAL_RTG_Registros';
+    return 'Sin clasificar (tracking roto)';
+  }
+  const CANONICAL_COST_KEY = {
+    'RO_MX_LEA_PRO_WA / Campaña Mensajes OVEX': 'MENSAJES|CONVERSION',
+    'RO_MX_SAL_PRO_AplicacionesWeb': 'WEBFORMS|CONVERSION',
+    'RO_MX_SAL_RTG_Registros': 'WEBFORMS|RETARGETING',
+  };
+  const metaRecs = recs.filter(r=>r.platform==='Meta');
+  const byCampaign = {};
+  metaRecs.forEach(r=>{
+    const canon = canonicalMetaCampaign(r.campaign);
+    (byCampaign[canon] = byCampaign[canon]||[]).push(r);
+  });
+  const campaignPipeline = Object.entries(byCampaign).map(([campaign, items])=>{
+    const total = items.length;
+    return {
+      campaign, total,
+      Onboarding: items.filter(r=>r.estatus==='Onboarding').length,
+      Onboarded: items.filter(r=>r.estatus==='Onboarded').length,
+      Rechazado: items.filter(r=>r.estatus==='Rechazado').length,
+      onboarding_pct: pctStatus(items,'Onboarding'), onboarded_pct: pctStatus(items,'Onboarded'), rechazado_pct: pctStatus(items,'Rechazado'),
+      ciec_si_pct: pctSi(items.map(r=>r.ciec)), nip_si_pct: pctSi(items.map(r=>r.nip)), buro_si_pct: pctSi(items.map(r=>r.buro)),
+      costKey: CANONICAL_COST_KEY[campaign] || null,
+    };
+  }).sort((a,b)=> b.total - a.total);
+
   const funnelByCanal = ['Meta','Google'].map(canal=>{
     const sub = recs.filter(r=>r.platform===canal);
     return {
@@ -706,6 +759,43 @@ function processLiveCrm(rows){
   // agrega la entrada estática de "Sin fuente asignada" (no vive en este Sheet)
   const sinFuente = (ADV_STATIC.funnel_by_canal||[]).find(r=>r.canal==='Sin fuente asignada');
   if(sinFuente) funnelByCanal.push(sinFuente);
+
+  // Taxonomía Lead / MQL / SQL / Customer / Rechazado
+  function classifyStage(r){
+    if(r.arrendamiento==='SI') return 'Customer';
+    if(r.estatus==='Onboarding') return 'Lead';
+    if(r.estatus==='Onboarded'){
+      const nip = r.nip==='SI', buro = r.buro==='SI', param = r.parametrico==='SI';
+      if(nip && buro && param) return 'SQL';
+      if(nip) return 'MQL';
+      return 'Onboarded sin calificar';
+    }
+    if(r.estatus==='Rechazado') return 'Rechazado';
+    return 'Sin clasificar';
+  }
+  function buildStageStats(items, canalName){
+    const total = items.length;
+    const counts = {};
+    items.forEach(r=>{ const s = classifyStage(r); counts[s] = (counts[s]||0)+1; });
+    const rech = items.filter(r=>r.estatus==='Rechazado');
+    const rechNipSi = rech.filter(r=>r.nip==='SI').length;
+    const rechBuroSi = rech.filter(r=>r.buro==='SI').length;
+    const pct = (n)=> total ? Math.round((n/total)*1000)/10 : null;
+    return {
+      canal: canalName, total,
+      lead_n: counts['Lead']||0, lead_pct: pct(counts['Lead']||0),
+      onboarded_sin_calificar_n: counts['Onboarded sin calificar']||0, onboarded_sin_calificar_pct: pct(counts['Onboarded sin calificar']||0),
+      mql_n: counts['MQL']||0, mql_pct: pct(counts['MQL']||0),
+      sql_n: counts['SQL']||0, sql_pct: pct(counts['SQL']||0),
+      customer_n: counts['Customer']||0, customer_pct: pct(counts['Customer']||0),
+      rechazado_n: counts['Rechazado']||0, rechazado_pct: pct(counts['Rechazado']||0),
+      rechazado_nip_si_n: rechNipSi, rechazado_nip_si_pct: rech.length ? Math.round((rechNipSi/rech.length)*1000)/10 : null,
+      rechazado_buro_si_n: rechBuroSi, rechazado_buro_si_pct: rech.length ? Math.round((rechBuroSi/rech.length)*1000)/10 : null,
+    };
+  }
+  const stageFunnel = ['Meta','Google'].map(canal=> buildStageStats(recs.filter(r=>r.platform===canal), canal));
+  const sinFuenteStage = (ADV_STATIC.stage_funnel||[]).find(r=>r.canal==='Sin fuente asignada');
+  if(sinFuenteStage) stageFunnel.push(sinFuenteStage);
 
   // Arrendamientos
   const arrendamientoSummary = {
@@ -820,10 +910,10 @@ function processLiveCrm(rows){
   }).sort((a,b)=>a.week_start.localeCompare(b.week_start));
 
   return {
-    crmMonth, crmWeek, funnelByCanal, arrendamientoSummary,
+    crmMonth, crmWeek, funnelByCanal, stageFunnel, arrendamientoSummary,
     lagBuckets, lagStats, buroAudit, contenidoRanking,
     pipelineByMonth, pipelineByWeek, weeklyQuality,
-    keywordDetail, keywordGroups, kwCoverage,
+    keywordDetail, keywordGroups, kwCoverage, campaignPipeline,
   };
 }
 
@@ -880,6 +970,7 @@ async function loadLiveData(){
     CRM_BY_MONTH = crm.crmMonth;
     CRM_BY_WEEK = crm.crmWeek;
     ADV.funnel_by_canal = crm.funnelByCanal;
+    ADV.stage_funnel = crm.stageFunnel;
     ADV.arrendamiento_summary = crm.arrendamientoSummary;
     ADV.lag_buckets = crm.lagBuckets;
     ADV.lag_stats = crm.lagStats;
@@ -891,6 +982,7 @@ async function loadLiveData(){
     ADV.keyword_detail = crm.keywordDetail;
     ADV.keyword_groups = crm.keywordGroups;
     ADV.kw_coverage = crm.kwCoverage;
+    ADV.campaign_pipeline = crm.campaignPipeline;
     if(!pipelineMonthsAvailable().includes(pipelineMonth)) pipelineMonth = 'all';
     crmOk = true;
   } else {
@@ -1172,6 +1264,89 @@ function buildKeywordDetailTable(){
     </div>`;
 }
 
+function getCostByObjetivoEtapa(){
+  const map = {};
+  (ACTIVE.meta_monthly_breakdown||[]).forEach(r=>{
+    const key = r.Objetivo+'|'+r.Etapa;
+    map[key] = (map[key]||0) + r.cost;
+  });
+  return map;
+}
+
+function buildCampaignPipelineTable(){
+  const rows = ADV.campaign_pipeline || [];
+  const costMap = getCostByObjetivoEtapa();
+  document.getElementById('campaignPipelineTableWrap').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2">Campaña</th>
+          <th rowspan="2" style="text-align:right;">Inversión</th>
+          <th rowspan="2" style="text-align:right;">Registros</th>
+          <th rowspan="2" style="text-align:right;">Costo/registro</th>
+          <th colspan="3" style="text-align:center;">Estatus actual</th>
+          <th colspan="3" style="text-align:center;">Calificación (de los evaluados)</th>
+        </tr>
+        <tr>
+          <th style="text-align:right;">Onboarding</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">Rechazado</th>
+          <th style="text-align:right;">CIEC SI</th><th style="text-align:right;">NIP SI</th><th style="text-align:right;">Buró SI</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>{
+          const cost = r.costKey ? (costMap[r.costKey]||0) : null;
+          const cpl = (cost && r.total) ? cost/r.total : null;
+          return `
+          <tr>
+            <td class="row-label">${r.campaign}</td>
+            <td style="text-align:right;">${cost===null?'—':fmtMoney2(cost)}</td>
+            <td style="text-align:right;">${fmtNum(r.total)}</td>
+            <td style="text-align:right;">${cpl===null?'—':fmtMoney2(cpl)}</td>
+            <td style="text-align:right;">${fmtNum(r.Onboarding)} (${r.onboarding_pct}%)</td>
+            <td style="text-align:right; color:#5dcaa5;">${fmtNum(r.Onboarded)} (${r.onboarded_pct}%)</td>
+            <td style="text-align:right; color:#e07a7a;">${fmtNum(r.Rechazado)} (${r.rechazado_pct}%)</td>
+            <td style="text-align:right;">${r.ciec_si_pct===null?'—':r.ciec_si_pct+'%'}</td>
+            <td style="text-align:right;">${r.nip_si_pct===null?'—':r.nip_si_pct+'%'}</td>
+            <td style="text-align:right; color:#8ec7f0;">${r.buro_si_pct===null?'—':r.buro_si_pct+'%'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function buildCampaignInsights(){
+  const rows = (ADV.campaign_pipeline || []).filter(r=>r.campaign!=='Sin clasificar (tracking roto)');
+  const el = document.getElementById('campaignInsights');
+  if(!el) return;
+  if(rows.length < 2){ el.innerHTML=''; return; }
+
+  const bestOnboarded = rows.reduce((a,r)=> (a===null || r.onboarded_pct>a.onboarded_pct) ? r : a, null);
+  const worstRechazado = rows.reduce((a,r)=> (a===null || r.rechazado_pct>a.rechazado_pct) ? r : a, null);
+  const sinClasificar = (ADV.campaign_pipeline||[]).find(r=>r.campaign==='Sin clasificar (tracking roto)');
+  const totalAll = (ADV.campaign_pipeline||[]).reduce((a,r)=>a+r.total,0);
+
+  const insights = [];
+  const mensajesRow = rows.find(r=>r.campaign.includes('MENSAJES') || r.campaign.includes('LEA_PRO_WA'));
+  if(!mensajesRow){
+    insights.push({sev:'warning', title:'MENSAJES (WhatsApp) sin registros atribuidos', text:'Ningún registro del CRM con fuente fb/ig + medio paid viene de las campañas de MENSAJES (RO_MX_LEA_PRO_WA / Campaña Mensajes OVEX), aunque Meta reporta cientos de conversaciones iniciadas cada mes. Todo lo que sí se atribuye correctamente es de campañas WEBFORMS. Esto sugiere que las conversaciones de WhatsApp no están pasando el UTM hacia el registro final — probablemente algunos de esos leads terminan en "Sin fuente asignada" en vez de aquí.'});
+  }
+  insights.push({sev:'success', title:'Mejor % Onboarded', text:`${bestOnboarded.campaign} — ${bestOnboarded.onboarded_pct}% (${fmtNum(bestOnboarded.Onboarded)} de ${fmtNum(bestOnboarded.total)}).`});
+  insights.push({sev: worstRechazado.rechazado_pct>40?'warning':'neutral', title:'Mayor % Rechazado', text:`${worstRechazado.campaign} — ${worstRechazado.rechazado_pct}% (${fmtNum(worstRechazado.Rechazado)} de ${fmtNum(worstRechazado.total)}).`});
+  if(sinClasificar && totalAll){
+    const pctSinClasificar = Math.round((sinClasificar.total/totalAll)*1000)/10;
+    insights.push({sev: pctSinClasificar>15?'warning':'neutral', title:'Registros sin clasificar', text:`${fmtNum(sinClasificar.total)} registros (${pctSinClasificar}% del total de Meta) no se pudieron emparejar con ninguna campaña conocida — tracking roto o IDs sin resolver.`});
+  }
+
+  el.innerHTML = `<div class="kpi-grid" style="margin-top:1.5rem;">${insights.map(i=>`
+    <div class="kpi-card ${i.sev==='warning'?'warning':(i.sev==='success'?'success':'')}">
+      <div class="kpi-label" style="display:flex; align-items:center; gap:.4rem;">
+        ${i.sev==='warning'?'⚠️':(i.sev==='success'?'✅':'ℹ️')} ${i.title}
+      </div>
+      <div style="font-size:.85rem; color:var(--color-text); margin-top:.3rem; line-height:1.5;">${i.text}</div>
+    </div>`).join('')}</div>`;
+}
+
+
 
 // -------------------- Resumen: tabla mensual detallada --------------------
 let investmentExpanded = { monthly:false, last8:false };
@@ -1353,31 +1528,77 @@ const ADV_STATIC = JSON.parse(document.getElementById('advanced-data').textConte
 let ADV = JSON.parse(JSON.stringify(ADV_STATIC));
 
 // -------------------- CALIDAD DE LEAD (avanzado) --------------------
-function buildFunnelCanalChart(){
-  const rows = ADV.funnel_by_canal;
+const STAGE_COLORS = { lead:'#a99bc2', onboarded_sin_calificar:'#f39c12', mql:'#9d67dd', sql:'#5dcaa5', customer:'#5b9bff' };
+const CANAL_COLORS = {'Meta':'#b98aef','Google':'#5b9bff','Sin fuente asignada':'#e8e2f0'};
+
+function buildStageFunnelChart(){
+  const rows = ADV.stage_funnel || [];
   const stages = [
-    {key:'ciec_si_pct', label:'CIEC verificada'},
-    {key:'nip_si_pct', label:'NIP verificado'},
-    {key:'parametrico_si_pct', label:'Paramétrico aprobado'},
-    {key:'buro_si_pct', label:'Buró aprobado'},
+    {key:'lead_pct', label:'Lead', color:STAGE_COLORS.lead},
+    {key:'onboarded_sin_calificar_pct', label:'Onboarded sin calificar', color:STAGE_COLORS.onboarded_sin_calificar},
+    {key:'mql_pct', label:'MQL', color:STAGE_COLORS.mql},
+    {key:'sql_pct', label:'SQL', color:STAGE_COLORS.sql},
+    {key:'customer_pct', label:'Customer', color:STAGE_COLORS.customer},
   ];
-  const colors = {'Meta':'#b98aef','Google':'#5b9bff','Sin fuente asignada':'#e8e2f0'};
-  const datasetsByCanal = rows.map(r=>({
-    label: r.canal,
-    data: stages.map(s=>r[s.key]),
-    backgroundColor: colors[r.canal] || '#7f8c8d',
-    borderRadius:4,
+  const datasets = stages.map(s=>({
+    label: s.label,
+    data: rows.map(r=>r[s.key]),
+    backgroundColor: s.color,
+    stack: 's', borderRadius:2,
   }));
-  renderChart('chartFunnelCanal', {
+  renderChart('chartStageFunnel', {
     type:'bar',
-    data:{ labels: stages.map(s=>s.label), datasets: datasetsByCanal },
+    data:{ labels: rows.map(r=>r.canal), datasets },
     options:{
+      indexAxis:'y',
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}},
-        tooltip:{ callbacks:{ label:(ctx)=> `${ctx.dataset.label}: ${ctx.parsed.y===null?'—':ctx.parsed.y+'%'}` } } },
-      scales:{ x:{grid:{color:gridColor}}, y:{grid:{color:gridColor}, max:100, ticks:{callback:v=>v+'%'}} }
+        tooltip:{ callbacks:{ label:(ctx)=>{
+          const r = rows[ctx.dataIndex];
+          const nKey = ctx.dataset.label==='Lead'?'lead_n':ctx.dataset.label==='Onboarded sin calificar'?'onboarded_sin_calificar_n':ctx.dataset.label==='MQL'?'mql_n':ctx.dataset.label==='SQL'?'sql_n':'customer_n';
+          return `${ctx.dataset.label}: ${ctx.parsed.x}% (${fmtNum(r[nKey])})`;
+        }}}},
+      scales:{ x:{grid:{color:gridColor}, stacked:true, max:100, ticks:{callback:v=>v+'%'}}, y:{grid:{color:gridColor}, stacked:true} }
     }
   });
+}
+
+function buildStageFunnelTable(){
+  const rows = ADV.stage_funnel || [];
+  document.getElementById('stageFunnelTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>Canal</th><th style="text-align:right;">Total</th><th style="text-align:right;">Lead</th><th style="text-align:right;">Onboarded sin calificar</th><th style="text-align:right;">MQL</th><th style="text-align:right;">SQL</th><th style="text-align:right;">Customer</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td class="row-label">${r.canal}</td>
+            <td style="text-align:right;">${fmtNum(r.total)}</td>
+            <td style="text-align:right;">${fmtNum(r.lead_n)} (${r.lead_pct}%)</td>
+            <td style="text-align:right; color:#f5c877;">${fmtNum(r.onboarded_sin_calificar_n)} (${r.onboarded_sin_calificar_pct}%)</td>
+            <td style="text-align:right; color:#c9a8ec;">${fmtNum(r.mql_n)} (${r.mql_pct}%)</td>
+            <td style="text-align:right; color:#5dcaa5;">${fmtNum(r.sql_n)} (${r.sql_pct}%)</td>
+            <td style="text-align:right; color:#8ec7f0;">${fmtNum(r.customer_n)} (${r.customer_pct}%)</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function buildRechazadosTable(){
+  const rows = ADV.stage_funnel || [];
+  document.getElementById('rechazadosTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>Canal</th><th style="text-align:right;">Rechazados</th><th style="text-align:right;">% del total</th><th style="text-align:right;">Con NIP = SI</th><th style="text-align:right;">Con Buró = SI</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td class="row-label">${r.canal}</td>
+            <td style="text-align:right; color:#e07a7a;">${fmtNum(r.rechazado_n)}</td>
+            <td style="text-align:right;">${r.rechazado_pct}%</td>
+            <td style="text-align:right;">${fmtNum(r.rechazado_nip_si_n)} (${r.rechazado_nip_si_pct===null?'—':r.rechazado_nip_si_pct+'%'})</td>
+            <td style="text-align:right; color:#8ec7f0;">${fmtNum(r.rechazado_buro_si_n)} (${r.rechazado_buro_si_pct===null?'—':r.rechazado_buro_si_pct+'%'})</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
 }
 
 function buildArrendamientoNote(){
@@ -1711,10 +1932,14 @@ function renderAll(){
   buildKeywordCoverageText();
   buildKeywordGroupTable();
   buildKeywordDetailTable();
+  buildCampaignPipelineTable();
+  buildCampaignInsights();
   buildLast8Table();
   buildLast8CrmChart();
   buildComparisonTable();
-  buildFunnelCanalChart();
+  buildStageFunnelChart();
+  buildStageFunnelTable();
+  buildRechazadosTable();
   buildArrendamientoNote();
   buildLagBucketsChart();
   buildBuroAuditTable();
