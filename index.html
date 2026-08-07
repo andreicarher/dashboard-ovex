@@ -135,6 +135,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <button class="tab-btn" data-tab="calidad" onclick="switchTab('calidad')">🔬 Calidad de Lead</button>
     <button class="tab-btn" data-tab="pipeline" onclick="switchTab('pipeline')">🧭 Pipeline Actual</button>
     <button class="tab-btn" data-tab="insights" onclick="switchTab('insights')">💡 Insights y Optimizaciones</button>
+    <button class="tab-btn" data-tab="awareness" onclick="switchTab('awareness')">📡 Awareness &amp; Interacción</button>
   </div>
 </div>
 
@@ -368,6 +369,49 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     </div>
   </div>
 
+  <!-- ============ TAB: AWARENESS & INTERACCION ============ -->
+  <div id="tab-awareness" class="tab-content">
+    <p class="text-muted" style="font-size:.85rem; margin-bottom:1rem;">
+      Métricas de alcance e interacción, no de conversión — para ver el tamaño y calidad del embudo superior, más allá de leads y costo. En vivo desde las mismas Queries de Meta y Google.
+    </p>
+
+    <div class="alert warning" style="margin-bottom:1.5rem;">
+      <div class="alert-title">⚠️ Datos incompletos — falta configuración del lado de origen</div>
+      <p><strong>Video Views</strong> no existe en ninguna de las dos Queries (Meta ni Google) — habría que agregarla en DataSlayer. <strong>Google Ads no tiene Alcance ni Frecuencia</strong> en esta Query, solo Impresiones y Clics — por eso su bloque abajo sale incompleto comparado con Meta. Esta sección de Meta sí incluye las campañas de marca/alcance (ALCANCE, TRÁFICO, LIKES FB) que excluimos en las demás pestañas, porque aquí sí son el punto — no solo WEBFORMS/MENSAJES.</p>
+    </div>
+
+    <div class="section-title"><span class="dot"></span> Meta Ads</div>
+    <div class="card">
+      <div class="chip-group">
+        <button class="chip-btn active" data-gran="month" onclick="setAwarenessGranularity('month')">Mensual</button>
+        <button class="chip-btn" data-gran="week" onclick="setAwarenessGranularity('week')">Semanal</button>
+      </div>
+      <div class="chart-title">Alcance, Impresiones y Visitas Web</div>
+      <div class="chart-container"><canvas id="chartMetaAwarenessVolume"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;">
+      <div class="chart-title">Clics únicos y Frecuencia</div>
+      <div class="chart-desc">Frecuencia = Impresiones ÷ Alcance del período — aproximación agregada, no el promedio exacto de frecuencia por usuario que reporta Meta directamente (el alcance sumado entre días/semanas sobrecuenta usuarios repetidos).</div>
+      <div class="chart-container"><canvas id="chartMetaAwarenessFreq"></canvas></div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;">
+      <div id="metaAwarenessTableWrap"></div>
+    </div>
+
+    <div class="section-title"><span class="dot google"></span> Google Ads</div>
+    <div class="card">
+      <div class="chart-title">Impresiones y Clics</div>
+      <div class="chart-container"><canvas id="chartGoogleAwareness"></canvas></div>
+      <div class="chart-legend-note">Sin Alcance, Frecuencia, Visitas Web ni Video Views disponibles en la Query actual de Google Ads.</div>
+    </div>
+
+    <div class="card" style="margin-top:1.5rem;">
+      <div id="googleAwarenessTableWrap"></div>
+    </div>
+  </div>
+
 </div>
 
 <div class="footer-note">
@@ -485,6 +529,32 @@ function weekStartOf(date){
   return `${mon.getFullYear()}-${String(mon.getMonth()+1).padStart(2,'0')}-${String(mon.getDate()).padStart(2,'0')}`;
 }
 function monthKeyOf(date){ return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`; }
+
+function processLiveMetaAwareness(rows){
+  // Sin filtrar por Objetivo: aquí sí queremos incluir campañas de marca/alcance (ALCANCE, TRÁFICO, LIKES FB, etc.)
+  const recs = [];
+  for(const r of rows){
+    const date = parseGvizDateVal(r[2]);
+    if(!date || date < CUTOFF_DATE) continue;
+    recs.push({
+      reach:num(r[7]), impressions:num(r[8]), unique_clicks:num(r[9]), lpv:num(r[17]),
+      week:weekKeyOf(date), week_start:weekStartOf(date), month:monthKeyOf(date)
+    });
+  }
+  const monthlyMap={}, weeklyMap={};
+  for(const rec of recs){
+    if(!monthlyMap[rec.month]) monthlyMap[rec.month]={month:rec.month, reach:0, impressions:0, unique_clicks:0, lpv:0};
+    const m = monthlyMap[rec.month];
+    m.reach+=rec.reach; m.impressions+=rec.impressions; m.unique_clicks+=rec.unique_clicks; m.lpv+=rec.lpv;
+    if(!weeklyMap[rec.week]) weeklyMap[rec.week]={week:rec.week, week_start:rec.week_start, reach:0, impressions:0, unique_clicks:0, lpv:0};
+    const w = weeklyMap[rec.week];
+    w.reach+=rec.reach; w.impressions+=rec.impressions; w.unique_clicks+=rec.unique_clicks; w.lpv+=rec.lpv;
+  }
+  const meta_monthly_awareness = Object.values(monthlyMap).sort((a,b)=>a.month.localeCompare(b.month));
+  const meta_weekly_awareness = Object.values(weeklyMap).sort((a,b)=>a.week_start.localeCompare(b.week_start));
+  [...meta_monthly_awareness, ...meta_weekly_awareness].forEach(r=>{ r.frequency = r.reach ? Math.round((r.impressions/r.reach)*100)/100 : null; });
+  return { meta_monthly_awareness, meta_weekly_awareness };
+}
 
 function processLiveMeta(rows){
   const recs = [];
@@ -988,7 +1058,7 @@ async function loadLiveData(){
   const [metaGoogleResult, crmResult, sinUtmResult] = await Promise.allSettled([
     (async()=>{
       const [metaRows, googleRows] = await Promise.all([fetchGviz(GVIZ_META_URL), fetchGviz(GVIZ_GOOGLE_URL)]);
-      return { metaProcessed: processLiveMeta(metaRows), googleProcessed: processLiveGoogle(googleRows) };
+      return { metaProcessed: processLiveMeta(metaRows), googleProcessed: processLiveGoogle(googleRows), awarenessProcessed: processLiveMetaAwareness(metaRows) };
     })(),
     (async()=>{
       const crmRows = await fetchGviz(GVIZ_CRM_URL);
@@ -1003,8 +1073,8 @@ async function loadLiveData(){
   let metaOk = false, crmOk = false, sinUtmOk = false;
 
   if(metaGoogleResult.status==='fulfilled'){
-    const { metaProcessed, googleProcessed } = metaGoogleResult.value;
-    Object.assign(ACTIVE, metaProcessed, googleProcessed);
+    const { metaProcessed, googleProcessed, awarenessProcessed } = metaGoogleResult.value;
+    Object.assign(ACTIVE, metaProcessed, googleProcessed, awarenessProcessed);
     if(!ACTIVE.months_available.includes(currentMonth)) currentMonth = 'all';
     metaOk = true;
   } else {
@@ -1211,6 +1281,118 @@ function buildMetaBreakdownResults(){
 }
 
 // -------------------- Google section --------------------
+// -------------------- Awareness & Interacción --------------------
+let awarenessGranularity = 'month';
+function setAwarenessGranularity(g){
+  awarenessGranularity = g;
+  document.querySelectorAll('[data-gran]').forEach(b=>b.classList.toggle('active', b.dataset.gran===g));
+  buildMetaAwarenessCharts();
+  buildMetaAwarenessTable();
+  buildGoogleAwarenessChart();
+  buildGoogleAwarenessTable();
+}
+function getAwarenessRows(){
+  const meta = awarenessGranularity==='month' ? (ACTIVE.meta_monthly_awareness||[]) : (ACTIVE.meta_weekly_awareness||[]);
+  const google = awarenessGranularity==='month' ? (ACTIVE.google_monthly||[]) : (ACTIVE.google_weekly||[]);
+  const labelFn = awarenessGranularity==='month' ? (r=>labelMonth(r.month)) : (r=>labelWeek(r.week));
+  return { meta, google, labelFn };
+}
+
+function buildMetaAwarenessCharts(){
+  const { meta, labelFn } = getAwarenessRows();
+  renderChart('chartMetaAwarenessVolume', {
+    type:'bar',
+    data:{
+      labels: meta.map(labelFn),
+      datasets:[
+        {label:'Alcance', data: meta.map(r=>r.reach), backgroundColor:'#b98aef', borderRadius:4},
+        {label:'Impresiones', data: meta.map(r=>r.impressions), backgroundColor:'#5b9bff', borderRadius:4},
+        {label:'Visitas Web', data: meta.map(r=>r.lpv), backgroundColor:'#5dcaa5', borderRadius:4},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
+      scales:{ x:{grid:{color:gridColor}}, y:{grid:{color:gridColor}, ticks:{callback:v=>v.toLocaleString('es-MX')}} }
+    }
+  });
+  renderChart('chartMetaAwarenessFreq', {
+    data:{
+      labels: meta.map(labelFn),
+      datasets:[
+        {type:'bar', label:'Clics únicos', data: meta.map(r=>r.unique_clicks), backgroundColor:'#f39c12', yAxisID:'y', borderRadius:4},
+        {type:'line', label:'Frecuencia', data: meta.map(r=>r.frequency), borderColor:'#e07a7a', backgroundColor:'#e07a7a', yAxisID:'y1', tension:.3},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
+      scales:{
+        x:{ grid:{color:gridColor} },
+        y:{ position:'left', grid:{color:gridColor}, title:{display:true,text:'Clics únicos',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Frecuencia',color:textMuted} },
+      }
+    }
+  });
+}
+
+function buildMetaAwarenessTable(){
+  const { meta, labelFn } = getAwarenessRows();
+  document.getElementById('metaAwarenessTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>${awarenessGranularity==='month'?'Mes':'Semana'}</th><th style="text-align:right;">Alcance</th><th style="text-align:right;">Impresiones</th><th style="text-align:right;">Clics únicos</th><th style="text-align:right;">Frecuencia</th><th style="text-align:right;">Visitas Web</th></tr></thead>
+      <tbody>
+        ${meta.map(r=>`
+          <tr>
+            <td class="row-label">${labelFn(r)}</td>
+            <td style="text-align:right;">${fmtNum(r.reach)}</td>
+            <td style="text-align:right;">${fmtNum(r.impressions)}</td>
+            <td style="text-align:right;">${fmtNum(r.unique_clicks)}</td>
+            <td style="text-align:right;">${r.frequency===null?'—':r.frequency}</td>
+            <td style="text-align:right;">${fmtNum(r.lpv)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function buildGoogleAwarenessChart(){
+  const { google, labelFn } = getAwarenessRows();
+  renderChart('chartGoogleAwareness', {
+    data:{
+      labels: google.map(labelFn),
+      datasets:[
+        {type:'bar', label:'Impresiones', data: google.map(r=>r.impressions), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4},
+        {type:'line', label:'Clics', data: google.map(r=>r.clicks), borderColor:'#f39c12', backgroundColor:'#f39c12', yAxisID:'y1', tension:.3},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
+      scales:{
+        x:{ grid:{color:gridColor} },
+        y:{ position:'left', grid:{color:gridColor}, title:{display:true,text:'Impresiones',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Clics',color:textMuted} },
+      }
+    }
+  });
+}
+
+function buildGoogleAwarenessTable(){
+  const { google, labelFn } = getAwarenessRows();
+  document.getElementById('googleAwarenessTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>${awarenessGranularity==='month'?'Mes':'Semana'}</th><th style="text-align:right;">Impresiones</th><th style="text-align:right;">Clics</th></tr></thead>
+      <tbody>
+        ${google.map(r=>`
+          <tr>
+            <td class="row-label">${labelFn(r)}</td>
+            <td style="text-align:right;">${fmtNum(r.impressions)}</td>
+            <td style="text-align:right;">${fmtNum(r.clicks)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
 function buildGoogleSection(){
   const arr = ACTIVE.google_weekly;
   renderChart('chartGoogleDaily', {
@@ -2081,6 +2263,10 @@ function renderAll(){
   buildMetaBreakdownCost();
   buildMetaBreakdownResults();
   buildGoogleSection();
+  buildMetaAwarenessCharts();
+  buildMetaAwarenessTable();
+  buildGoogleAwarenessChart();
+  buildGoogleAwarenessTable();
   buildKeywordCoverageText();
   buildKeywordGroupTable();
   buildKeywordDetailTable();
