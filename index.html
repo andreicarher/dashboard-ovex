@@ -1301,19 +1301,22 @@ function getAwarenessRows(){
 function buildMetaAwarenessCharts(){
   const { meta, labelFn } = getAwarenessRows();
   renderChart('chartMetaAwarenessVolume', {
-    type:'bar',
     data:{
       labels: meta.map(labelFn),
       datasets:[
-        {label:'Alcance', data: meta.map(r=>r.reach), backgroundColor:'#b98aef', borderRadius:4},
-        {label:'Impresiones', data: meta.map(r=>r.impressions), backgroundColor:'#5b9bff', borderRadius:4},
-        {label:'Visitas Web', data: meta.map(r=>r.lpv), backgroundColor:'#5dcaa5', borderRadius:4},
+        {type:'bar', label:'Alcance', data: meta.map(r=>r.reach), backgroundColor:'#b98aef', borderRadius:4, yAxisID:'y'},
+        {type:'bar', label:'Impresiones', data: meta.map(r=>r.impressions), backgroundColor:'#5b9bff', borderRadius:4, yAxisID:'y'},
+        {type:'line', label:'Visitas Web', data: meta.map(r=>r.lpv), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', tension:.3, yAxisID:'y1'},
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
-      scales:{ x:{grid:{color:gridColor}}, y:{grid:{color:gridColor}, ticks:{callback:v=>v.toLocaleString('es-MX')}} }
+      scales:{
+        x:{grid:{color:gridColor}},
+        y:{ position:'left', grid:{color:gridColor}, ticks:{callback:v=>v.toLocaleString('es-MX')}, title:{display:true,text:'Alcance / Impresiones',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, ticks:{callback:v=>v.toLocaleString('es-MX')}, title:{display:true,text:'Visitas Web',color:textMuted} },
+      }
     }
   });
   renderChart('chartMetaAwarenessFreq', {
