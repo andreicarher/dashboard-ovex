@@ -471,6 +471,7 @@ const GVIZ_META_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/t
 const GVIZ_GOOGLE_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Query Google 2026')}`;
 const GVIZ_CRM_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Base Leads con UTM')}`;
 const GVIZ_SIN_UTM_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Base Leads sin UTM')}`;
+const GVIZ_KEYWORD_STATUS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent('Estatus Keyword')}`;
 const CUTOFF_DATE = new Date(2026,1,1); // 1 feb 2026
 
 const ETAPA_MAP = {
@@ -745,6 +746,19 @@ function buildStageStats(items, canalName){
 }
 
 // "Base Leads sin UTM" -- mismas 24 columnas, sin Fuente/Medio (todo es un solo canal)
+// "Estatus Keyword" -- A: Keyword, B: Estatus (Activa/Pausada), llenado a mano por Andrei
+function processLiveKeywordStatus(rows){
+  const map = {};
+  for(const r of rows){
+    if(!r[0]) continue;
+    const kw = String(r[0]).trim().toLowerCase();
+    const status = String(r[1]||'').trim().toLowerCase();
+    if(kw==='keyword') continue; // por si el header viene como fila de datos
+    map[kw] = status==='pausada' ? 'pausada' : 'activa';
+  }
+  return map;
+}
+
 function processLiveSinUtm(rows){
   const recs = [];
   for(const r of rows){
@@ -1055,7 +1069,7 @@ function setLiveBadge(state, crmState, sinUtmState){
 }
 
 async function loadLiveData(){
-  const [metaGoogleResult, crmResult, sinUtmResult] = await Promise.allSettled([
+  const [metaGoogleResult, crmResult, sinUtmResult, keywordStatusResult] = await Promise.allSettled([
     (async()=>{
       const [metaRows, googleRows] = await Promise.all([fetchGviz(GVIZ_META_URL), fetchGviz(GVIZ_GOOGLE_URL)]);
       return { metaProcessed: processLiveMeta(metaRows), googleProcessed: processLiveGoogle(googleRows), awarenessProcessed: processLiveMetaAwareness(metaRows) };
@@ -1068,9 +1082,19 @@ async function loadLiveData(){
       const sinUtmRows = await fetchGviz(GVIZ_SIN_UTM_URL);
       return processLiveSinUtm(sinUtmRows);
     })(),
+    (async()=>{
+      const statusRows = await fetchGviz(GVIZ_KEYWORD_STATUS_URL);
+      return processLiveKeywordStatus(statusRows);
+    })(),
   ]);
 
   let metaOk = false, crmOk = false, sinUtmOk = false;
+
+  if(keywordStatusResult.status==='fulfilled'){
+    ADV.keyword_status_map = keywordStatusResult.value;
+  } else {
+    console.warn('No se pudo cargar Estatus Keyword en vivo.', keywordStatusResult.reason);
+  }
 
   if(metaGoogleResult.status==='fulfilled'){
     const { metaProcessed, googleProcessed, awarenessProcessed } = metaGoogleResult.value;
@@ -1476,17 +1500,29 @@ function buildKeywordGroupTable(){
     </table>`;
 }
 
+function keywordStatusBadge(keyword){
+  const map = ADV.keyword_status_map || {};
+  const status = map[String(keyword).trim().toLowerCase()];
+  if(!status){
+    return `<span style="display:inline-block; border-radius:12px; padding:.2rem .7rem; font-size:.72rem; font-weight:700; background:rgba(169,155,194,.15); color:#a99bc2;">Sin dato</span>`;
+  }
+  const isActiva = status==='activa';
+  return `<span style="display:inline-block; border-radius:12px; padding:.2rem .7rem; font-size:.72rem; font-weight:700; ${isActiva ? 'background:rgba(93,202,165,.18); color:#5dcaa5;' : 'background:rgba(224,122,122,.18); color:#e07a7a;'}">${isActiva?'● Activa':'⏸ Pausada'}</span>`;
+}
+
 function buildKeywordDetailTable(){
   const rows = ADV.keyword_detail || [];
   document.getElementById('keywordDetailTableWrap').innerHTML = `
     <div class="chart-title" style="font-size:.9rem;">Detalle por keyword</div>
+    <p class="text-muted" style="font-size:.76rem; margin-bottom:.6rem;">Estatus en vivo desde la pestaña <code>Estatus Keyword</code> del Google Sheet (llenado a mano por Andrei) — no viene directo de Google Ads todavía. "Sin dato" = la keyword aún no está en esa pestaña.</p>
     <div class="table-scroll">
     <table>
       <thead>
         <tr>
           <th rowspan="2">Keyword</th>
+          <th rowspan="2">Estatus (manual)</th>
           <th rowspan="2" style="text-align:right;">Leads</th>
-          <th colspan="3" style="text-align:center;">Estatus actual</th>
+          <th colspan="3" style="text-align:center;">Estatus del lead</th>
           <th colspan="3" style="text-align:center;">Calificación (de los evaluados)</th>
         </tr>
         <tr>
@@ -1498,6 +1534,7 @@ function buildKeywordDetailTable(){
         ${rows.map(r=>`
           <tr>
             <td class="row-label">${r.keyword}</td>
+            <td>${keywordStatusBadge(r.keyword)}</td>
             <td style="text-align:right;">${fmtNum(r.total)}</td>
             <td style="text-align:right;">${fmtNum(r.Onboarding)} (${r.onboarding_pct}%)</td>
             <td style="text-align:right; color:#5dcaa5;">${fmtNum(r.Onboarded)} (${r.onboarded_pct}%)</td>
