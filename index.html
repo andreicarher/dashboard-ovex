@@ -1328,9 +1328,9 @@ function buildMetaAwarenessCharts(){
     data:{
       labels: meta.map(labelFn),
       datasets:[
-        {type:'bar', label:'Alcance', data: meta.map(r=>r.reach), backgroundColor:'#b98aef', borderRadius:4, yAxisID:'y'},
-        {type:'bar', label:'Impresiones', data: meta.map(r=>r.impressions), backgroundColor:'#5b9bff', borderRadius:4, yAxisID:'y'},
-        {type:'line', label:'Visitas Web', data: meta.map(r=>r.lpv), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', tension:.3, yAxisID:'y1'},
+        {type:'bar', label:'Alcance', data: meta.map(r=>r.reach), backgroundColor:'#b98aef', borderRadius:4, yAxisID:'y', order:2},
+        {type:'bar', label:'Impresiones', data: meta.map(r=>r.impressions), backgroundColor:'#5b9bff', borderRadius:4, yAxisID:'y', order:2},
+        {type:'line', label:'Visitas Web', data: meta.map(r=>r.lpv), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', tension:.3, yAxisID:'y1', order:1},
       ]
     },
     options:{
@@ -1347,8 +1347,8 @@ function buildMetaAwarenessCharts(){
     data:{
       labels: meta.map(labelFn),
       datasets:[
-        {type:'bar', label:'Clics únicos', data: meta.map(r=>r.unique_clicks), backgroundColor:'#f39c12', yAxisID:'y', borderRadius:4},
-        {type:'line', label:'Frecuencia', data: meta.map(r=>r.frequency), borderColor:'#e07a7a', backgroundColor:'#e07a7a', yAxisID:'y1', tension:.3},
+        {type:'bar', label:'Clics únicos', data: meta.map(r=>r.unique_clicks), backgroundColor:'#f39c12', yAxisID:'y', borderRadius:4, order:2},
+        {type:'line', label:'Frecuencia', data: meta.map(r=>r.frequency), borderColor:'#e07a7a', backgroundColor:'#e07a7a', yAxisID:'y1', tension:.3, order:1},
       ]
     },
     options:{
@@ -1388,8 +1388,8 @@ function buildGoogleAwarenessChart(){
     data:{
       labels: google.map(labelFn),
       datasets:[
-        {type:'bar', label:'Impresiones', data: google.map(r=>r.impressions), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4},
-        {type:'line', label:'Clics', data: google.map(r=>r.clicks), borderColor:'#f39c12', backgroundColor:'#f39c12', yAxisID:'y1', tension:.3},
+        {type:'bar', label:'Impresiones', data: google.map(r=>r.impressions), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4, order:2},
+        {type:'line', label:'Clics', data: google.map(r=>r.clicks), borderColor:'#f39c12', backgroundColor:'#f39c12', yAxisID:'y1', tension:.3, order:1},
       ]
     },
     options:{
@@ -1427,8 +1427,8 @@ function buildGoogleSection(){
     data:{
       labels: arr.map(r=>labelWeek(r.week)),
       datasets:[
-        {label:'Inversión', data: arr.map(r=>r.cost), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4},
-        {label:'Conversiones', data: arr.map(r=>r.conversions), type:'line', borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3}
+        {label:'Inversión', data: arr.map(r=>r.cost), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4, order:2},
+        {label:'Conversiones', data: arr.map(r=>r.conversions), type:'line', borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:1}
       ]
     },
     options:{
