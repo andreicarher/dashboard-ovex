@@ -34,6 +34,12 @@ h1{ font-size:1.85rem; font-weight:800; margin-bottom:.3rem; background:linear-g
 .subtitle{ font-size:.95rem; color:var(--color-text-muted); max-width:820px; }
 
 .tabs-nav{ background:var(--color-surface); border-bottom:3px solid var(--color-accent); position:sticky; top:0; z-index:50; box-shadow:0 4px 20px rgba(0,0,0,.25); }
+.global-header-controls{ background:#180d2b; border-bottom:1px solid rgba(255,255,255,.08); }
+.ghc-inner{ max-width:1400px; margin:0 auto; padding:.7rem 2rem; display:flex; align-items:center; gap:1.3rem; flex-wrap:wrap; }
+.ghc-group{ display:flex; align-items:center; gap:.5rem; font-size:.8rem; color:var(--color-text-muted); }
+.ghc-group select, .ghc-group input[type="date"]{ background:var(--color-secondary); color:var(--color-text); border:1px solid rgba(255,255,255,.15); border-radius:6px; padding:.3rem .5rem; font-size:.8rem; }
+.ghc-checkbox{ display:flex; align-items:center; gap:.4rem; font-size:.8rem; color:var(--color-text-muted); cursor:pointer; white-space:nowrap; }
+.ghc-checkbox input{ accent-color:var(--color-accent); }
 .tabs-inner{ max-width:1400px; margin:0 auto; display:flex; gap:.3rem; padding:0 2rem; overflow-x:auto; }
 .tab-btn{ background:none; border:none; color:var(--color-text-muted); padding:1rem 1.2rem; font-size:.9rem; font-weight:600; cursor:pointer; white-space:nowrap; border-bottom:3px solid transparent; margin-bottom:-3px; transition:.15s; }
 .tab-btn:hover{ color:var(--color-text); }
@@ -127,7 +133,8 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 
 <div class="tabs-nav">
   <div class="tabs-inner">
-    <button class="tab-btn active" data-tab="resumen" onclick="switchTab('resumen')">📊 Resumen</button>
+    <button class="tab-btn active" data-tab="ejecutivo" onclick="switchTab('ejecutivo')">🏛 Resumen Ejecutivo</button>
+    <button class="tab-btn" data-tab="resumen" onclick="switchTab('resumen')">📊 Resumen</button>
     <button class="tab-btn" data-tab="meta" onclick="switchTab('meta')">🎯 Meta Ads</button>
     <button class="tab-btn" data-tab="google" onclick="switchTab('google')">🔍 Google Ads</button>
     <button class="tab-btn" data-tab="ocho" onclick="switchTab('ocho')">📅 Últimas 8 semanas</button>
@@ -139,15 +146,63 @@ tr:hover td{ background:rgba(255,255,255,.02); }
   </div>
 </div>
 
+<div class="global-header-controls">
+  <div class="ghc-inner">
+    <div class="ghc-group">
+      <label>Rango</label>
+      <select id="dateRangePreset" onchange="onDateRangePresetChange(this.value)">
+        <option value="all">Todo</option>
+        <option value="7d">Últimos 7 días</option>
+        <option value="this_month">Este mes</option>
+        <option value="last_month">Mes anterior</option>
+        <option value="custom">Personalizado</option>
+      </select>
+    </div>
+    <div class="ghc-group" id="customDateInputs" style="display:none;">
+      <input type="date" id="customStartInput" onchange="onCustomDateChange()">
+      <span style="color:var(--color-text-muted);">–</span>
+      <input type="date" id="customEndInput" onchange="onCustomDateChange()">
+    </div>
+    <label class="ghc-checkbox">
+      <input type="checkbox" id="compareToggle" onchange="onCompareToggle(this.checked)"> Comparar con período anterior
+    </label>
+    <div class="chip-group" style="margin:0;">
+      <button class="chip-btn active" data-gran="month" onclick="setGlobalGranularity('month')">Mensual</button>
+      <button class="chip-btn" data-gran="week" onclick="setGlobalGranularity('week')">Semanal</button>
+    </div>
+    <div id="liveStatusBadge" class="live-badge live-loading" style="margin:0; margin-left:auto;">🔄 Conectando…</div>
+  </div>
+</div>
+
 <div class="container">
 
+  <!-- ============ TAB: RESUMEN EJECUTIVO ============ -->
+  <div id="tab-ejecutivo" class="tab-content active">
+    <div class="section-title"><span class="dot"></span> Señales automáticas</div>
+    <div id="ejecutivoInsightsWrap" class="kpi-grid"></div>
+
+    <div class="section-title"><span class="dot"></span> KPIs principales</div>
+    <div class="kpi-grid" id="ejecutivoKpiGrid"></div>
+
+    <div class="section-title"><span class="dot"></span> Inversión vs. Onboarded</div>
+    <div class="card">
+      <div class="chart-desc" id="ejecutivoChartDesc"></div>
+      <div class="chart-container tall"><canvas id="chartEjecutivoMain"></canvas></div>
+    </div>
+
+    <div class="section-title"><span class="dot"></span> Tabla consolidada por canal</div>
+    <div class="card">
+      <div id="ejecutivoChannelTableWrap"></div>
+    </div>
+  </div>
+
   <!-- ============ TAB: RESUMEN ============ -->
-  <div id="tab-resumen" class="tab-content active">
-    <div id="liveStatusBadge" class="live-badge live-loading">🔄 Conectando con Google Sheets…</div>
+  <div id="tab-resumen" class="tab-content">
     <div class="section-title"><span class="dot"></span> Resumen general (feb–jul 2026)</div>
     <div class="kpi-grid" id="kpiGrid"></div>
 
     <div class="section-title"><span class="dot"></span> Inversión total: Meta vs Google</div>
+
     <div class="card">
       <div class="chart-desc">Vista mensual, todo el período disponible</div>
       <div class="chart-container"><canvas id="chartCanalTotal"></canvas></div>
@@ -431,6 +486,212 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 const STATIC = JSON.parse(document.getElementById('dashboard-data').textContent);
 let ACTIVE = JSON.parse(JSON.stringify(STATIC));
 let currentMonth = 'all';
+
+// -------------------- Filtro de fecha GLOBAL (header) --------------------
+let GLOBAL_FILTER = { preset:'all', customStart:null, customEnd:null, compare:false, granularity:'month' };
+
+function getFilterRange(){
+  const today = new Date();
+  const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if(GLOBAL_FILTER.preset==='7d'){
+    const start = new Date(todayMid); start.setDate(start.getDate()-6);
+    return { start, end: todayMid };
+  }
+  if(GLOBAL_FILTER.preset==='this_month'){
+    return { start: new Date(today.getFullYear(), today.getMonth(), 1), end: todayMid };
+  }
+  if(GLOBAL_FILTER.preset==='last_month'){
+    return { start: new Date(today.getFullYear(), today.getMonth()-1, 1), end: new Date(today.getFullYear(), today.getMonth(), 0) };
+  }
+  if(GLOBAL_FILTER.preset==='custom' && GLOBAL_FILTER.customStart && GLOBAL_FILTER.customEnd){
+    return { start: new Date(GLOBAL_FILTER.customStart+'T00:00:00'), end: new Date(GLOBAL_FILTER.customEnd+'T00:00:00') };
+  }
+  return { start: CUTOFF_DATE, end: todayMid };
+}
+function getComparisonRange(range){
+  const days = Math.round((range.end - range.start)/86400000)+1;
+  const end = new Date(range.start); end.setDate(end.getDate()-1);
+  const start = new Date(end); start.setDate(start.getDate()-(days-1));
+  return { start, end };
+}
+function inRange(dateStr, range){
+  if(!dateStr) return false;
+  const d = new Date(dateStr+'T00:00:00');
+  return d >= range.start && d <= range.end;
+}
+function fmtDateRange(range){
+  const f = d => d.toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'});
+  return `${f(range.start)} – ${f(range.end)}`;
+}
+
+function onDateRangePresetChange(val){
+  GLOBAL_FILTER.preset = val;
+  document.getElementById('customDateInputs').style.display = val==='custom' ? 'flex' : 'none';
+  if(val!=='custom') renderAll();
+}
+function onCustomDateChange(){
+  const s = document.getElementById('customStartInput').value;
+  const e = document.getElementById('customEndInput').value;
+  if(s && e){ GLOBAL_FILTER.customStart = s; GLOBAL_FILTER.customEnd = e; renderAll(); }
+}
+function onCompareToggle(checked){
+  GLOBAL_FILTER.compare = checked;
+  renderAll();
+}
+function setGlobalGranularity(g){
+  GLOBAL_FILTER.granularity = g;
+  document.querySelectorAll('[data-gran]').forEach(b=>b.classList.toggle('active', b.dataset.gran===g));
+  renderAll();
+}
+
+function deltaBadge(current, previous, lowerIsBetter){
+  if(previous===null || previous===undefined || !previous || current===null || current===undefined) return '';
+  const change = ((current-previous)/previous)*100;
+  const isGood = lowerIsBetter ? change<0 : change>0;
+  const arrow = change>=0 ? '▲' : '▼';
+  const color = isGood ? '#5dcaa5' : '#e07a7a';
+  return ` <span style="color:${color}; font-size:.76rem; font-weight:700;">${arrow}${Math.abs(change).toFixed(1)}%</span>`;
+}
+
+// -------------------- Resumen Ejecutivo: cálculos --------------------
+function computeEjecutivoData(range){
+  const metaDaily = (ACTIVE.meta_daily||[]).filter(r=>inRange(r.date, range));
+  const googleDaily = (ACTIVE.google_daily||[]).filter(r=>inRange(r.date, range));
+  const stageRecs = (ADV.stage_records||[]).filter(r=>inRange(r.date, range));
+  const metaRecs = stageRecs.filter(r=>r.platform==='Meta');
+  const googleRecs = stageRecs.filter(r=>r.platform==='Google');
+  const organicRecs = stageRecs.filter(r=>r.platform==='Sin fuente asignada');
+
+  const metaCost = metaDaily.reduce((a,r)=>a+r.cost,0);
+  const googleCost = googleDaily.reduce((a,r)=>a+r.cost,0);
+  const totalInversion = metaCost + googleCost;
+  const registrosCRM = metaRecs.length + googleRecs.length;
+  const cpl = registrosCRM ? totalInversion/registrosCRM : null;
+  const onboarded = metaRecs.filter(r=>r.stage==='Customer').length + googleRecs.filter(r=>r.stage==='Customer').length;
+  const cac = onboarded ? totalInversion/onboarded : null;
+
+  function rowFor(canal, cost, records){
+    const registros = records.length;
+    const ob = records.filter(r=>r.stage==='Customer').length;
+    return { canal, inversion:cost, registros, cpl: registros?cost/registros:null,
+      onboarded:ob, pct_conv: registros? ob/registros*100 : null, cac: ob? cost/ob : null };
+  }
+  const channelRows = [
+    rowFor('Meta Ads', metaCost, metaRecs),
+    rowFor('Google Ads', googleCost, googleRecs),
+    rowFor('Orgánico / Sin Fuente', 0, organicRecs),
+    rowFor('Total', totalInversion, [...metaRecs, ...googleRecs, ...organicRecs]),
+  ];
+
+  return { totalInversion, metaCost, googleCost, registrosCRM, cpl, onboarded, cac, channelRows };
+}
+
+function computeEjecutivoTimeSeries(range){
+  const metaDaily = (ACTIVE.meta_daily||[]).filter(r=>inRange(r.date, range));
+  const googleDaily = (ACTIVE.google_daily||[]).filter(r=>inRange(r.date, range));
+  const stageRecs = (ADV.stage_records||[]).filter(r=>inRange(r.date, range) && (r.platform==='Meta'||r.platform==='Google'));
+  const gran = GLOBAL_FILTER.granularity;
+  const keyOf = r => gran==='month' ? r.month : r.week;
+  const buckets = {};
+  function ensure(k){ if(!buckets[k]) buckets[k] = { key:k, metaCost:0, googleCost:0, onboarded:0 }; return buckets[k]; }
+  metaDaily.forEach(r=>{ ensure(keyOf(r)).metaCost += r.cost; });
+  googleDaily.forEach(r=>{ ensure(keyOf(r)).googleCost += r.cost; });
+  stageRecs.forEach(r=>{ if(r.stage==='Customer') ensure(keyOf(r)).onboarded++; });
+  const keys = Object.keys(buckets).sort();
+  const labelFn = gran==='month' ? labelMonth : labelWeek;
+  return keys.map(k=>({ label: labelFn(k), metaCost: buckets[k].metaCost, googleCost: buckets[k].googleCost, onboarded: buckets[k].onboarded }));
+}
+
+function buildEjecutivoInsights(){
+  const range = getFilterRange();
+  const data = computeEjecutivoData(range);
+  const insights = computeRuleInsights(); // reutiliza el motor de reglas ya existente
+  const el = document.getElementById('ejecutivoInsightsWrap');
+  if(!el) return;
+  const list = insights.slice(0,5);
+  if(!list.length){ el.innerHTML = '<p class="text-muted" style="font-size:.85rem;">Todavía no hay suficientes datos para calcular señales.</p>'; return; }
+  el.innerHTML = list.map(i=>`
+    <div class="kpi-card ${i.sev==='warning'?'warning':(i.sev==='success'?'success':'')}">
+      <div class="kpi-label" style="display:flex; align-items:center; gap:.4rem;">
+        ${i.sev==='warning'?'⚠️':(i.sev==='success'?'✅':'ℹ️')} ${i.title}
+      </div>
+      <div style="font-size:.85rem; color:var(--color-text); margin-top:.3rem; line-height:1.5;">${i.text}</div>
+    </div>`).join('');
+}
+
+function buildEjecutivoKPIs(){
+  const range = getFilterRange();
+  const data = computeEjecutivoData(range);
+  let prevData = null;
+  if(GLOBAL_FILTER.compare){
+    const prevRange = getComparisonRange(range);
+    prevData = computeEjecutivoData(prevRange);
+  }
+  const cacText = data.cac===null ? 'Aún sin clientes pagados' : fmtMoney2(data.cac);
+  const onboardedSub = prevData ? `vs. ${fmtNum(prevData.onboarded)} período anterior${deltaBadge(data.onboarded, prevData.onboarded, false)}` : 'Con NIP + Buró + Paramétrico + arrendamiento';
+
+  const cards = [
+    { label:'Inversión Total', value: fmtMoney(data.totalInversion), sub: prevData ? `vs. ${fmtMoney(prevData.totalInversion)} anterior${deltaBadge(data.totalInversion, prevData.totalInversion, true)}` : `Meta: ${fmtMoney(data.metaCost)} · Google: ${fmtMoney(data.googleCost)}`, cls:'' },
+    { label:'Registros CRM', value: fmtNum(data.registrosCRM), sub: prevData ? `vs. ${fmtNum(prevData.registrosCRM)} anterior${deltaBadge(data.registrosCRM, prevData.registrosCRM, false)}` : 'Meta + Google, atribuidos por UTM', cls:'crm' },
+    { label:'CPL Promedio', value: data.cpl===null?'—':fmtMoney2(data.cpl), sub: prevData ? `vs. ${prevData.cpl===null?'—':fmtMoney2(prevData.cpl)} anterior${deltaBadge(data.cpl, prevData.cpl, true)}` : 'Inversión ÷ Registros CRM', cls:'' },
+    { label:'Onboarded (Customer)', value: fmtNum(data.onboarded), sub: onboardedSub, cls:'success' },
+    { label:'CAC Real (Costo/Onboarded)', value: cacText, sub: data.cac===null ? 'Ver "Orgánico / Sin Fuente" para contexto' : (prevData ? `vs. ${prevData.cac===null?'—':fmtMoney2(prevData.cac)} anterior${deltaBadge(data.cac, prevData.cac, true)}` : 'Inversión ÷ Onboarded — métrica estrella'), cls:'google' },
+  ];
+  document.getElementById('ejecutivoKpiGrid').innerHTML = cards.map(c=>`
+    <div class="kpi-card ${c.cls}">
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      <div class="kpi-sub">${c.sub}</div>
+    </div>`).join('');
+}
+
+function buildEjecutivoChart(){
+  const range = getFilterRange();
+  const rows = computeEjecutivoTimeSeries(range);
+  document.getElementById('ejecutivoChartDesc').textContent = `${fmtDateRange(range)} · ${GLOBAL_FILTER.granularity==='month'?'vista mensual':'vista semanal'}`;
+  renderChart('chartEjecutivoMain', {
+    data:{
+      labels: rows.map(r=>r.label),
+      datasets:[
+        {type:'bar', label:'Inversión Meta', data: rows.map(r=>r.metaCost), backgroundColor:'#b98aef', stack:'inv', borderRadius:3, yAxisID:'y', order:2},
+        {type:'bar', label:'Inversión Google', data: rows.map(r=>r.googleCost), backgroundColor:'#5b9bff', stack:'inv', borderRadius:3, yAxisID:'y', order:2},
+        {type:'line', label:'Onboarded', data: rows.map(r=>r.onboarded), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:1},
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
+      scales:{
+        x:{ grid:{color:gridColor}, stacked:true },
+        y:{ position:'left', grid:{color:gridColor}, stacked:true, title:{display:true,text:'Inversión ($)',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Onboarded',color:textMuted}, ticks:{stepSize:1} },
+      }
+    }
+  });
+}
+
+function buildEjecutivoChannelTable(){
+  const range = getFilterRange();
+  const data = computeEjecutivoData(range);
+  document.getElementById('ejecutivoChannelTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>Canal</th><th style="text-align:right;">Inversión</th><th style="text-align:right;">Registros CRM</th><th style="text-align:right;">CPL</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">% Conv. a Onboarded</th><th style="text-align:right;">CAC Real</th></tr></thead>
+      <tbody>
+        ${data.channelRows.map(r=>`
+          <tr ${r.canal==='Total'?'style="font-weight:700; border-top:2px solid rgba(255,255,255,.15);"':''}>
+            <td class="row-label">${r.canal}</td>
+            <td style="text-align:right;">${fmtMoney2(r.inversion)}</td>
+            <td style="text-align:right;">${fmtNum(r.registros)}</td>
+            <td style="text-align:right;">${r.cpl===null?'—':fmtMoney2(r.cpl)}</td>
+            <td style="text-align:right; color:#5dcaa5;">${fmtNum(r.onboarded)}</td>
+            <td style="text-align:right;">${r.pct_conv===null?'—':r.pct_conv.toFixed(1)+'%'}</td>
+            <td style="text-align:right; color:#8ec7f0;">${r.cac===null?'Aún sin clientes pagados':fmtMoney2(r.cac)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+
 let currentCrmGran = 'month';
 
 const fmtMoney = n => '$' + Number(n||0).toLocaleString('es-MX', {maximumFractionDigits:0});
@@ -569,6 +830,7 @@ function processLiveMeta(rows){
     const etapa = r[21] || ETAPA_MAP[campaign] || 'CONVERSION';
     recs.push({
       objetivo, etapa, cost:num(r[6]), clicks:num(r[9]), msg_conv:num(r[11]), web_reg:num(r[15]),
+      date: date.toISOString().slice(0,10),
       week:weekKeyOf(date), week_start:weekStartOf(date), month:monthKeyOf(date)
     });
   }
@@ -608,6 +870,7 @@ function processLiveMeta(rows){
     meta_weekly_breakdown: Object.values(weeklyBreakMap).sort((a,b)=>a.week_start.localeCompare(b.week_start)),
     months_available: [...new Set(recs.map(r=>r.month))].sort(),
     weekly_obj: Object.values(weeklyObjMap),
+    meta_daily: recs,
   };
 }
 
@@ -617,6 +880,7 @@ function processLiveGoogle(rows){
     const date = parseGvizDateVal(r[2]);
     if(!date || date < CUTOFF_DATE) continue;
     recs.push({ cost:num(r[8]), clicks:num(r[5]), impressions:num(r[4]), conversions:num(r[9]),
+      date: date.toISOString().slice(0,10),
       week:weekKeyOf(date), week_start:weekStartOf(date), month:monthKeyOf(date) });
   }
   const monthlyMap={}, weeklyMap={};
@@ -633,6 +897,7 @@ function processLiveGoogle(rows){
   return {
     google_monthly: Object.values(monthlyMap).sort((a,b)=>a.month.localeCompare(b.month)),
     google_weekly: Object.values(weeklyMap).sort((a,b)=>a.week_start.localeCompare(b.week_start)),
+    google_daily: recs,
   };
 }
 
@@ -766,11 +1031,12 @@ function processLiveSinUtm(rows){
     if(!fecha || fecha < CUTOFF_DATE) continue;
     recs.push({
       estatus: r[1], nip: r[19], parametrico: r[20], buro: r[21], arrendamiento: r[22],
+      date: fecha.toISOString().slice(0,10),
       week: weekKeyOf(fecha), week_start: weekStartOf(fecha), month: monthKeyOf(fecha),
     });
   }
   const stats = buildStageStats(recs, 'Sin fuente asignada');
-  const stageRecords = recs.map(r=>({platform:'Sin fuente asignada', month:r.month, week:r.week, week_start:r.week_start, stage:classifyStage(r)}));
+  const stageRecords = recs.map(r=>({platform:'Sin fuente asignada', date:r.date, month:r.month, week:r.week, week_start:r.week_start, stage:classifyStage(r)}));
   // arrendamientos: dentro del corte feb+ y en todo el histórico (sin cutoff) para contexto
   const customerCutoff = recs.filter(r=>r.arrendamiento==='SI').length;
   let customerAlltime = 0;
@@ -910,7 +1176,7 @@ function processLiveCrm(rows){
   if(sinFuente) funnelByCanal.push(sinFuente);
 
   const stageFunnel = ['Meta','Google'].map(canal=> buildStageStats(recs.filter(r=>r.platform===canal), canal));
-  const stageRecords = recs.map(r=>({platform:r.platform, month:r.month, week:r.week, week_start:r.week_start, stage:classifyStage(r)}));
+  const stageRecords = recs.map(r=>({platform:r.platform, date:r.fecha.toISOString().slice(0,10), month:r.month, week:r.week, week_start:r.week_start, stage:classifyStage(r)}));
   const sinFuenteStage = (ADV_STATIC.stage_funnel||[]).find(r=>r.canal==='Sin fuente asignada');
   if(sinFuenteStage) stageFunnel.push(sinFuenteStage);
 
@@ -2296,6 +2562,10 @@ function buildRuleInsights(){
 }
 
 function renderAll(){
+  buildEjecutivoInsights();
+  buildEjecutivoKPIs();
+  buildEjecutivoChart();
+  buildEjecutivoChannelTable();
   buildKPIs();
   buildCanalTotalChart();
   buildMonthlySummaryTable();
