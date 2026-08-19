@@ -184,7 +184,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <div class="section-title"><span class="dot"></span> KPIs principales</div>
     <div class="kpi-grid" id="ejecutivoKpiGrid"></div>
 
-    <div class="section-title"><span class="dot"></span> Inversión vs. Onboarded</div>
+    <div class="section-title"><span class="dot"></span> Inversión vs. Clientes</div>
     <div class="card">
       <div class="chart-desc" id="ejecutivoChartDesc"></div>
       <div class="chart-container tall"><canvas id="chartEjecutivoMain"></canvas></div>
@@ -628,14 +628,14 @@ function buildEjecutivoKPIs(){
     prevData = computeEjecutivoData(prevRange);
   }
   const cacText = data.cac===null ? 'Aún sin clientes pagados' : fmtMoney2(data.cac);
-  const onboardedSub = prevData ? `vs. ${fmtNum(prevData.onboarded)} período anterior${deltaBadge(data.onboarded, prevData.onboarded, false)}` : 'Con NIP + Buró + Paramétrico + arrendamiento';
+  const clientesSub = prevData ? `vs. ${fmtNum(prevData.onboarded)} período anterior${deltaBadge(data.onboarded, prevData.onboarded, false)}` : 'Con arrendamiento = SI (firmó contrato)';
 
   const cards = [
     { label:'Inversión Total', value: fmtMoney(data.totalInversion), sub: prevData ? `vs. ${fmtMoney(prevData.totalInversion)} anterior${deltaBadge(data.totalInversion, prevData.totalInversion, true)}` : `Meta: ${fmtMoney(data.metaCost)} · Google: ${fmtMoney(data.googleCost)}`, cls:'' },
     { label:'Registros CRM', value: fmtNum(data.registrosCRM), sub: prevData ? `vs. ${fmtNum(prevData.registrosCRM)} anterior${deltaBadge(data.registrosCRM, prevData.registrosCRM, false)}` : 'Meta + Google, atribuidos por UTM', cls:'crm' },
     { label:'CPL Promedio', value: data.cpl===null?'—':fmtMoney2(data.cpl), sub: prevData ? `vs. ${prevData.cpl===null?'—':fmtMoney2(prevData.cpl)} anterior${deltaBadge(data.cpl, prevData.cpl, true)}` : 'Inversión ÷ Registros CRM', cls:'' },
-    { label:'Onboarded (Customer)', value: fmtNum(data.onboarded), sub: onboardedSub, cls:'success' },
-    { label:'CAC Real (Costo/Onboarded)', value: cacText, sub: data.cac===null ? 'Ver "Orgánico / Sin Fuente" para contexto' : (prevData ? `vs. ${prevData.cac===null?'—':fmtMoney2(prevData.cac)} anterior${deltaBadge(data.cac, prevData.cac, true)}` : 'Inversión ÷ Onboarded — métrica estrella'), cls:'google' },
+    { label:'Clientes', value: fmtNum(data.onboarded), sub: clientesSub, cls:'success' },
+    { label:'CAC Real (Costo/Cliente)', value: cacText, sub: data.cac===null ? 'Ver "Orgánico / Sin Fuente" para contexto' : (prevData ? `vs. ${prevData.cac===null?'—':fmtMoney2(prevData.cac)} anterior${deltaBadge(data.cac, prevData.cac, true)}` : 'Inversión ÷ Clientes — métrica estrella'), cls:'google' },
   ];
   document.getElementById('ejecutivoKpiGrid').innerHTML = cards.map(c=>`
     <div class="kpi-card ${c.cls}">
@@ -655,7 +655,7 @@ function buildEjecutivoChart(){
       datasets:[
         {type:'bar', label:'Inversión Meta', data: rows.map(r=>r.metaCost), backgroundColor:'#b98aef', stack:'inv', borderRadius:3, yAxisID:'y', order:2},
         {type:'bar', label:'Inversión Google', data: rows.map(r=>r.googleCost), backgroundColor:'#5b9bff', stack:'inv', borderRadius:3, yAxisID:'y', order:2},
-        {type:'line', label:'Onboarded', data: rows.map(r=>r.onboarded), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:1},
+        {type:'line', label:'Clientes', data: rows.map(r=>r.onboarded), borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:1},
       ]
     },
     options:{
@@ -663,8 +663,8 @@ function buildEjecutivoChart(){
       plugins:{ legend:{position:'top', labels:{color:'#f2eefa'}} },
       scales:{
         x:{ grid:{color:gridColor}, stacked:true },
-        y:{ position:'left', grid:{color:gridColor}, stacked:true, title:{display:true,text:'Inversión ($)',color:textMuted} },
-        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Onboarded',color:textMuted}, ticks:{stepSize:1} },
+        y:{ position:'left', grid:{color:gridColor}, stacked:true, title:{display:true,text:'Inversión (MXN)',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Clientes',color:textMuted}, ticks:{stepSize:1} },
       }
     }
   });
@@ -675,7 +675,7 @@ function buildEjecutivoChannelTable(){
   const data = computeEjecutivoData(range);
   document.getElementById('ejecutivoChannelTableWrap').innerHTML = `
     <table>
-      <thead><tr><th>Canal</th><th style="text-align:right;">Inversión</th><th style="text-align:right;">Registros CRM</th><th style="text-align:right;">CPL</th><th style="text-align:right;">Onboarded</th><th style="text-align:right;">% Conv. a Onboarded</th><th style="text-align:right;">CAC Real</th></tr></thead>
+      <thead><tr><th>Canal</th><th style="text-align:right;">Inversión</th><th style="text-align:right;">Registros CRM</th><th style="text-align:right;">CPL</th><th style="text-align:right;">Clientes</th><th style="text-align:right;">% Conv. a Cliente</th><th style="text-align:right;">CAC Real</th></tr></thead>
       <tbody>
         ${data.channelRows.map(r=>`
           <tr ${r.canal==='Total'?'style="font-weight:700; border-top:2px solid rgba(255,255,255,.15);"':''}>
@@ -694,9 +694,9 @@ function buildEjecutivoChannelTable(){
 
 let currentCrmGran = 'month';
 
-const fmtMoney = n => '$' + Number(n||0).toLocaleString('es-MX', {maximumFractionDigits:0});
+const fmtMoney = n => '$' + Number(n||0).toLocaleString('es-MX', {maximumFractionDigits:0}) + ' MXN';
 const fmtNum = n => Number(n||0).toLocaleString('es-MX', {maximumFractionDigits:0});
-const fmtMoney2 = n => '$' + Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtMoney2 = n => '$' + Number(n||0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' MXN';
 const fmtPct = n => (n===null || n===undefined) ? '—' : (n>=0?'+':'') + n.toFixed(1) + '%';
 
 const MONTH_NAMES = {'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
@@ -1693,17 +1693,21 @@ function buildGoogleSection(){
     data:{
       labels: arr.map(r=>labelWeek(r.week)),
       datasets:[
-        {label:'Inversión', data: arr.map(r=>r.cost), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4, order:2},
-        {label:'Conversiones', data: arr.map(r=>r.conversions), type:'line', borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:1}
+        {label:'Inversión', data: arr.map(r=>r.cost), backgroundColor:'#5b9bff', yAxisID:'y', borderRadius:4, order:3},
+        {label:'Conversiones', data: arr.map(r=>r.conversions), type:'line', borderColor:'#5dcaa5', backgroundColor:'#5dcaa5', yAxisID:'y1', tension:.3, order:2},
+        {label:'CPL (costo/conversión)', data: arr.map(r=> r.conversions ? Math.round((r.cost/r.conversions)*100)/100 : null), type:'line', borderColor:'#f39c12', backgroundColor:'#f39c12', yAxisID:'y2', tension:.3, order:1, borderDash:[5,3]},
       ]
     },
     options:{
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom', labels:{color:'#f2eefa'}} },
+      plugins:{ legend:{position:'bottom', labels:{color:'#f2eefa'}},
+        tooltip:{ callbacks:{ label:(ctx)=> ctx.dataset.label==='CPL (costo/conversión)' ? `${ctx.dataset.label}: ${ctx.parsed.y===null?'—':fmtMoney2(ctx.parsed.y)}` : (ctx.dataset.label==='Inversión' ? `${ctx.dataset.label}: ${fmtMoney2(ctx.parsed.y)}` : `${ctx.dataset.label}: ${ctx.parsed.y}`) } }
+      },
       scales:{
         x:{ grid:{color:gridColor} },
-        y:{ position:'left', grid:{color:gridColor}, title:{display:true,text:'Inversión ($)',color:textMuted} },
-        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Conversiones',color:textMuted} }
+        y:{ position:'left', grid:{color:gridColor}, title:{display:true,text:'Inversión (MXN)',color:textMuted} },
+        y1:{ position:'right', grid:{display:false}, title:{display:true,text:'Conversiones',color:textMuted} },
+        y2:{ position:'right', grid:{display:false}, title:{display:true,text:'CPL (MXN)',color:textMuted}, ticks:{callback:v=>'$'+v.toLocaleString('es-MX')} },
       }
     }
   });
