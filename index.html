@@ -985,9 +985,16 @@ function classifyPlatformCrm(fuente, medio){
   }
   return null;
 }
+// Algunos leads llegan con el ID numérico de campaña de Meta en vez del nombre resuelto
+// (confirmado por Andrei: 120239835078170423 = RO_MX_SAL_PRO_AplicacionesWeb ...General Rockin)
+const CAMPAIGN_ID_MAP = {
+  '120239835078170423': 'RO_MX_SAL_PRO_AplicacionesWeb MX_MF_24 50_FBIG_INT_General Rockin',
+};
 function normCampaign(s){
   if(!s) return 'Sin definir';
-  return String(s).trim().replace(/[\s\-\+]+/g, ' ');
+  const trimmed = String(s).trim();
+  if(CAMPAIGN_ID_MAP[trimmed]) return CAMPAIGN_ID_MAP[trimmed];
+  return trimmed.replace(/[\s\-\+]+/g, ' ');
 }
 function pctSi(values){
   const valid = values.filter(v=>v==='SI'||v==='NO');
