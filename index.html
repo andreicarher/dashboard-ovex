@@ -86,6 +86,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
 .badge{ display:inline-block; padding:.2rem .6rem; border-radius:6px; font-size:.72rem; font-weight:700; }
 .badge.meta{ background:rgba(157,103,221,.18); color:#c9a3f0; }
 .badge.google{ background:rgba(66,133,244,.15); color:#7aa8f5; }
+.badge.instagram{ background:rgba(225,48,108,.16); color:#f28bb0; }
 .var-pos{ color:#ff8b7a; font-weight:700; }
 .var-neg{ color:#6bcf9a; font-weight:700; }
 .text-muted{ color:var(--color-text-muted); }
@@ -2358,7 +2359,7 @@ function buildContenidoRankingTable(){
 
 const FUENTE_LABELS = { fb:'Facebook', ig:'Instagram', google:'Google', '':'Sin fuente' };
 function fuenteLabel(f){ return FUENTE_LABELS[f] || (f ? f.charAt(0).toUpperCase()+f.slice(1) : '—'); }
-function fuenteBadgeClass(f){ return f==='google' ? 'google' : 'meta'; }
+function fuenteBadgeClass(f){ if(f==='google') return 'google'; if(f==='ig') return 'instagram'; return 'meta'; }
 
 function buildCampaignSourceQualityTable(){
   const rows = ADV.campaign_source_quality;
@@ -2372,7 +2373,7 @@ function buildCampaignSourceQualityTable(){
     <table>
       <thead>
         <tr>
-          <th>Fuente</th><th>Campaña</th>
+          <th>Fuente</th><th style="max-width:280px;">Campaña</th>
           <th style="text-align:right;">Leads</th>
           <th style="text-align:right;">% NIP aprobado</th>
           <th style="text-align:right;">% Llegó a Buró</th>
@@ -2385,7 +2386,7 @@ function buildCampaignSourceQualityTable(){
         ${rows.map(r=>`
           <tr>
             <td><span class="badge ${fuenteBadgeClass(r.fuente)}">${fuenteLabel(r.fuente)}</span></td>
-            <td style="font-size:.78rem;" class="row-label">${r.campaign}</td>
+            <td class="row-label" title="${r.campaign}" style="font-size:.78rem; max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.campaign}</td>
             <td style="text-align:right;">${fmtNum(r.total)}</td>
             <td style="text-align:right;">${r.nip_si_pct===null?'—':r.nip_si_pct+'%'}</td>
             <td style="text-align:right;">${r.buro_eval_pct===null?'—':r.buro_eval_pct+'%'}</td>
