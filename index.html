@@ -140,6 +140,7 @@ tr:hover td{ background:rgba(255,255,255,.02); }
     <button class="tab-btn" data-tab="ocho" onclick="switchTab('ocho')">📅 Últimas 8 semanas</button>
     <button class="tab-btn" data-tab="crm" onclick="switchTab('crm')">✅ CRM vs Plataforma</button>
     <button class="tab-btn" data-tab="calidad" onclick="switchTab('calidad')">🔬 Calidad de Lead</button>
+    <button class="tab-btn" data-tab="fuentecampana" onclick="switchTab('fuentecampana')">🧬 Fuente × Campaña</button>
     <button class="tab-btn" data-tab="pipeline" onclick="switchTab('pipeline')">🧭 Pipeline Actual</button>
     <button class="tab-btn" data-tab="insights" onclick="switchTab('insights')">💡 Insights y Optimizaciones</button>
     <button class="tab-btn" data-tab="awareness" onclick="switchTab('awareness')">📡 Awareness &amp; Interacción</button>
@@ -368,6 +369,24 @@ tr:hover td{ background:rgba(255,255,255,.02); }
       <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">Mínimo 10 registros por creativo. Ordenado por % que llega a Onboarded (no solo volumen) — es decir, qué tan bien ese anuncio trae leads que efectivamente avanzan, no solo cuántos registra. % CIEC SI y % Buró SI son sobre los leads de ese creativo con valor capturado en ese campo (ver nota de la gráfica de funnel arriba sobre tamaños de muestra chicos).</p>
       <div id="contenidoRankingWrap"></div>
     </div>
+  </div>
+
+  <!-- ============ TAB: FUENTE x CAMPAÑA ============ -->
+  <div id="tab-fuentecampana" class="tab-content">
+    <p class="text-muted" style="font-size:.85rem; margin-bottom:1.5rem;">
+      Mismo dato que <strong>Calidad de Lead</strong>, pero desagregado por <strong>fuente real</strong> (Facebook / Instagram / Google) en vez de agrupar todo Meta junto — para responder qué canal trae los leads que mejor perfilan, no solo cuáles trae más volumen. Se conecta en vivo a <code>Base Leads con UTM</code>.
+    </p>
+
+    <div class="section-title"><span class="dot"></span> Aprobación de Buró por fuente y campaña</div>
+    <div class="card">
+      <p class="text-muted" style="font-size:.82rem; margin-bottom:1rem;">
+        <strong>Mínimo 30 leads</strong> por combinación fuente+campaña para entrar al ranking (mismo criterio que el resto del dashboard) — con menos volumen el porcentaje no es confiable. "% Buró aprobado" es sobre los que ya llegaron a esa evaluación, no sobre el total de la fila. "Clientes" es el conteo de arrendamientos firmados hasta hoy — con muestra chica y canal pagado reciente, es normal que la mayoría esté en 0 todavía.
+      </p>
+      <div class="table-scroll" id="campaignSourceQualityTableWrap"></div>
+      <div id="campaignSourceQualityNote" class="chart-legend-note" style="border-top:1px dashed rgba(243,156,18,.3);"></div>
+    </div>
+
+    <div id="campaignSourceQualityInsights"></div>
   </div>
 
   <!-- ============ TAB: PIPELINE ACTUAL ============ -->
@@ -1055,7 +1074,7 @@ function processLiveCrm(rows){
     if(!platform) continue;
     const primeraVisita = parseGvizDateVal(r[9]);
     recs.push({
-      platform, estatus: r[1], campaign: normCampaign(r[5]), contenido: r[6], termino: r[8],
+      platform, fuente: String(r[3]||'').trim().toLowerCase(), estatus: r[1], campaign: normCampaign(r[5]), contenido: r[6], termino: r[8],
       fecha, primeraVisita,
       ciec: r[18], nip: r[19], parametrico: r[20], buro: r[21], arrendamiento: r[22],
       week: weekKeyOf(fecha), week_start: weekStartOf(fecha), month: monthKeyOf(fecha),
@@ -1159,6 +1178,34 @@ function processLiveCrm(rows){
       costKey: CANONICAL_COST_KEY[campaign] || null,
     };
   }).sort((a,b)=> b.total - a.total);
+
+  // Calidad de lead por Fuente + Campaña (fb/ig/google, no colapsado a Meta) — mínimo 30 leads para entrar al ranking
+  const MIN_SAMPLE_SOURCE_CAMPAIGN = 30;
+  const bySourceCampaign = {};
+  recs.forEach(r=>{
+    const key = r.fuente + '|||' + r.campaign;
+    (bySourceCampaign[key] = bySourceCampaign[key]||[]).push(r);
+  });
+  const allSourceCampaignRows = Object.entries(bySourceCampaign).map(([key, items])=>{
+    const [fuente, campaign] = key.split('|||');
+    const total = items.length;
+    const buroEvalItems = items.filter(r=>r.buro==='SI'||r.buro==='NO');
+    const buroSiN = items.filter(r=>r.buro==='SI').length;
+    const rechazadoN = items.filter(r=>r.estatus==='Rechazado').length;
+    return {
+      fuente, campaign, total,
+      nip_si_pct: pctSi(items.map(r=>r.nip)),
+      buro_eval_pct: total ? Math.round((buroEvalItems.length/total)*1000)/10 : null,
+      buro_aprobado_pct: buroEvalItems.length ? Math.round((buroSiN/buroEvalItems.length)*1000)/10 : null,
+      rechazado_pct: total ? Math.round((rechazadoN/total)*1000)/10 : null,
+      cliente_n: items.filter(r=>r.arrendamiento==='SI').length,
+    };
+  }).sort((a,b)=> b.total - a.total);
+  const campaignSourceQuality = allSourceCampaignRows.filter(r=>r.total>=MIN_SAMPLE_SOURCE_CAMPAIGN);
+  const campaignSourceQualityExcluded = {
+    n_campaigns: allSourceCampaignRows.length - campaignSourceQuality.length,
+    n_leads: allSourceCampaignRows.filter(r=>r.total<MIN_SAMPLE_SOURCE_CAMPAIGN).reduce((a,r)=>a+r.total,0),
+  };
 
   const funnelByCanal = ['Meta','Google'].map(canal=>{
     const sub = recs.filter(r=>r.platform===canal);
@@ -1305,6 +1352,7 @@ function processLiveCrm(rows){
     lagBuckets, lagStats, buroAudit, contenidoRanking,
     pipelineByMonth, pipelineByWeek, weeklyQuality,
     keywordDetail, keywordGroups, kwCoverage, campaignPipeline,
+    campaignSourceQuality, campaignSourceQualityExcluded,
   };
 }
 
@@ -1390,6 +1438,8 @@ async function loadLiveData(){
     ADV.keyword_groups = crm.keywordGroups;
     ADV.kw_coverage = crm.kwCoverage;
     ADV.campaign_pipeline = crm.campaignPipeline;
+    ADV.campaign_source_quality = crm.campaignSourceQuality;
+    ADV.campaign_source_quality_excluded = crm.campaignSourceQualityExcluded;
     if(!pipelineMonthsAvailable().includes(pipelineMonth)) pipelineMonth = 'all';
     crmOk = true;
   } else {
@@ -2306,6 +2356,83 @@ function buildContenidoRankingTable(){
     </table>`;
 }
 
+const FUENTE_LABELS = { fb:'Facebook', ig:'Instagram', google:'Google', '':'Sin fuente' };
+function fuenteLabel(f){ return FUENTE_LABELS[f] || (f ? f.charAt(0).toUpperCase()+f.slice(1) : '—'); }
+function fuenteBadgeClass(f){ return f==='google' ? 'google' : 'meta'; }
+
+function buildCampaignSourceQualityTable(){
+  const rows = ADV.campaign_source_quality;
+  const wrap = document.getElementById('campaignSourceQualityTableWrap');
+  if(!wrap) return;
+  if(!rows || !rows.length){
+    wrap.innerHTML = '<p class="text-muted" style="font-size:.85rem;">Todavía no hay datos en vivo cargados para este cruce — reintenta en unos segundos o revisa la conexión.</p>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Fuente</th><th>Campaña</th>
+          <th style="text-align:right;">Leads</th>
+          <th style="text-align:right;">% NIP aprobado</th>
+          <th style="text-align:right;">% Llegó a Buró</th>
+          <th style="text-align:right;">% Buró aprobado</th>
+          <th style="text-align:right;">% Rechazado</th>
+          <th style="text-align:right;">Clientes</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(r=>`
+          <tr>
+            <td><span class="badge ${fuenteBadgeClass(r.fuente)}">${fuenteLabel(r.fuente)}</span></td>
+            <td style="font-size:.78rem;" class="row-label">${r.campaign}</td>
+            <td style="text-align:right;">${fmtNum(r.total)}</td>
+            <td style="text-align:right;">${r.nip_si_pct===null?'—':r.nip_si_pct+'%'}</td>
+            <td style="text-align:right;">${r.buro_eval_pct===null?'—':r.buro_eval_pct+'%'}</td>
+            <td style="text-align:right; color:#8ec7f0;">${r.buro_aprobado_pct===null?'—':r.buro_aprobado_pct+'%'}</td>
+            <td style="text-align:right; color:#e07a7a;">${r.rechazado_pct===null?'—':r.rechazado_pct+'%'}</td>
+            <td style="text-align:right;" class="${r.cliente_n>0?'var-neg':''}">${fmtNum(r.cliente_n)}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  const excl = ADV.campaign_source_quality_excluded;
+  const noteEl = document.getElementById('campaignSourceQualityNote');
+  if(noteEl){
+    noteEl.innerHTML = excl && excl.n_campaigns
+      ? `⚠️ ${excl.n_campaigns} combinación(es) fuente+campaña quedaron fuera del ranking por tener menos de 30 leads (${fmtNum(excl.n_leads)} leads en total) — sus porcentajes no son confiables todavía.`
+      : '';
+  }
+}
+
+function buildCampaignSourceQualityInsights(){
+  const rows = ADV.campaign_source_quality || [];
+  const el = document.getElementById('campaignSourceQualityInsights');
+  if(!el) return;
+  if(rows.length < 2){ el.innerHTML = ''; return; }
+
+  const withBuro = rows.filter(r=>r.buro_aprobado_pct!==null);
+  if(!withBuro.length){ el.innerHTML = ''; return; }
+  const best = withBuro.reduce((a,r)=> (a===null || r.buro_aprobado_pct>a.buro_aprobado_pct) ? r : a, null);
+  const biggest = rows.reduce((a,r)=> (a===null || r.total>a.total) ? r : a, null);
+  const totalClientes = rows.reduce((a,r)=>a+r.cliente_n,0);
+
+  const insights = [];
+  insights.push({ sev:'success', title:'Mejor % de aprobación de Buró', text:`${fuenteLabel(best.fuente)} — ${best.campaign} — ${best.buro_aprobado_pct}% de los evaluados aprueba (${fmtNum(best.total)} leads).` });
+  if(biggest.fuente!==best.fuente || biggest.campaign!==best.campaign){
+    insights.push({ sev: (biggest.buro_aprobado_pct!==null && biggest.buro_aprobado_pct<best.buro_aprobado_pct/2) ? 'warning' : 'neutral', title:'Campaña con más volumen', text:`${fuenteLabel(biggest.fuente)} — ${biggest.campaign} — ${fmtNum(biggest.total)} leads, ${biggest.buro_aprobado_pct===null?'sin dato de Buró aún':biggest.buro_aprobado_pct+'% aprueba Buró'}.` });
+  }
+  insights.push({ sev: totalClientes>0 ? 'success' : 'warning', title:'Clientes en estas combinaciones', text: totalClientes>0 ? `${totalClientes} lead(s) de estas combinaciones fuente+campaña ya firmaron arrendamiento.` : 'Ninguna combinación fuente+campaña con volumen suficiente tiene todavía un cliente — es pronto para juzgar conversión final, ver "% Buró aprobado" como proxy mientras tanto.' });
+
+  el.innerHTML = `<div class="kpi-grid" style="margin-top:1.5rem;">${insights.map(i=>`
+    <div class="kpi-card ${i.sev==='warning'?'warning':(i.sev==='success'?'success':'')}">
+      <div class="kpi-label" style="display:flex; align-items:center; gap:.4rem;">
+        ${i.sev==='warning'?'⚠️':(i.sev==='success'?'✅':'ℹ️')} ${i.title}
+      </div>
+      <div style="font-size:.85rem; color:var(--color-text); margin-top:.3rem; line-height:1.5;">${i.text}</div>
+    </div>`).join('')}</div>`;
+}
+
 // -------------------- INIT --------------------
 // -------------------- Pipeline Actual --------------------
 let pipelineMonth = 'all';
@@ -2586,6 +2713,8 @@ function renderAll(){
   buildKeywordDetailTable();
   buildCampaignPipelineTable();
   buildCampaignInsights();
+  buildCampaignSourceQualityTable();
+  buildCampaignSourceQualityInsights();
   buildLast8Table();
   buildLast8CrmChart();
   buildComparisonTable();
